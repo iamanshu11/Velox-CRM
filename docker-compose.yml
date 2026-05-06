@@ -1,0 +1,112 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Velox-CRM  —  docker-compose.yml
+#
+#  Services
+#  ────────
+#  postgres   PostgreSQL 16 database (auto-runs migrations on first boot)
+#  backend    Express API          → http://localhost:5000
+#  seed       One-shot seed runner (creates super-admin, then exits)
+#  frontend   React SPA via nginx  → http://localhost:3000
+#
+#  Quick start
+#  ───────────
+#  1. Copy .env.example → .env and fill in JWT_SECRET
+#  2. docker compose up --build
+#  3. Open http://localhost:3000
+#     Login: admin@crm.com / Admin@1234  (change after first login!)
+#
+#  To re-run the seed manually:
+#    docker compose run --rm seed
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: velox_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       crm_db
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      # Persist data across restarts
+      - postgres_data:/var/lib/postgresql/data
+      # Auto-run the schema migration on first boot
+      - ./backend/database/migrations/001_create_users_table.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d crm_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # ── Backend (Express API) ───────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: velox_backend
+    restart: unless-stopped
+    environment:
+      PORT:             5000
+      NODE_ENV:         production
+      # Database — uses the postgres service name as the host
+      DB_HOST:          postgres
+      DB_PORT:          5432
+      DB_NAME:          crm_db
+      DB_USER:          postgres
+      DB_PASSWORD:      ${DB_PASSWORD:-postgres}
+      # JWT — override JWT_SECRET in your .env file!
+      JWT_SECRET:       ${JWT_SECRET:-change_this_to_a_long_random_secret}
+      JWT_EXPIRES_IN:   7d
+      # Allow requests from the frontend container
+      ALLOWED_ORIGINS:  http://localhost:3000
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Seed (one-shot) ─────────────────────────────────────────
+  # Creates the super-admin account if it does not already exist.
+  # Runs once then exits — safe to re-run at any time.
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: velox_seed
+    environment:
+      DB_HOST:     postgres
+      DB_PORT:     5432
+      DB_NAME:     crm_db
+      DB_USER:     postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+    command: ["node", "database/seeds/superAdminSeed.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # ── Frontend (React + nginx) ────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Backend API URL baked into the Vite bundle at build time
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+    container_name: velox_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+# ── Named Volumes ───────────────────────────────────────────
+volumes:
+  postgres_data:
+    name: velox_postgres_data
