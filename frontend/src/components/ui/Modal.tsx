@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useId, type ReactNode } from 'react'
+import FocusTrap from 'focus-trap-react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -27,65 +28,98 @@ export default function Modal({
   footer,
   size = 'md',
 }: ModalProps) {
+  const titleId = useId()
+  const descriptionId = useId()
+
   // Lock body scroll when modal is open
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    if (!open) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
   }, [open])
 
   // Close on Escape
   useEffect(() => {
+    if (!open) return
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [open, onClose])
 
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+    <FocusTrap
+      focusTrapOptions={{
+        // When the modal opens the trap auto-focuses the first focusable
+        // element (close button or first form field), and on close it returns
+        // focus to whatever element opened the modal.
+        initialFocus: false,
+        escapeDeactivates: false, // we handle Escape ourselves above
+        clickOutsideDeactivates: false,
+        returnFocusOnDeactivate: true,
+      }}
+    >
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div
-        className={cn(
-          'relative w-full bg-white rounded-2xl shadow-xl z-10',
-          'animate-in fade-in zoom-in-95 duration-200',
-          sizeClasses[size]
-        )}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-gray-100">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-            {description && (
-              <p className="text-sm text-gray-500 mt-0.5">{description}</p>
-            )}
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+
+        {/* Panel */}
+        <div
+          className={cn(
+            'relative w-full bg-white rounded-2xl shadow-xl z-10',
+            'animate-in fade-in zoom-in-95 duration-200',
+            sizeClasses[size]
+          )}
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between p-6 border-b border-gray-100">
+            <div>
+              <h2 id={titleId} className="text-base font-semibold text-gray-900">
+                {title}
+              </h2>
+              {description && (
+                <p id={descriptionId} className="text-sm text-gray-500 mt-0.5">
+                  {description}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close dialog"
+              className="ml-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="ml-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            <X size={18} />
-          </button>
+
+          {/* Body */}
+          <div className="p-6">{children}</div>
+
+          {/* Footer */}
+          {footer && (
+            <div className="px-6 pb-6 pt-0 flex items-center justify-end gap-3">
+              {footer}
+            </div>
+          )}
         </div>
-
-        {/* Body */}
-        <div className="p-6">{children}</div>
-
-        {/* Footer */}
-        {footer && (
-          <div className="px-6 pb-6 pt-0 flex items-center justify-end gap-3">
-            {footer}
-          </div>
-        )}
       </div>
-    </div>
+    </FocusTrap>
   )
 }

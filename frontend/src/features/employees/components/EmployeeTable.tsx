@@ -65,11 +65,11 @@ export default function EmployeeTable({ employees, loading }: Props) {
       data={employees}
       keyField="id"
       loading={loading}
-      emptyMessage="No employees found. Create your first employee above."
+      emptyMessage="No users found. Create your first user above."
       columns={[
         {
           key: 'name',
-          header: 'Employee',
+          header: 'User',
           render: (row) => (
             <div className="flex items-center gap-3">
               <Avatar name={row.name} size="sm" />
@@ -85,7 +85,7 @@ export default function EmployeeTable({ employees, loading }: Props) {
           header: 'Role',
           render: (row) => (
             <span className="capitalize text-gray-600">
-              {row.role.replace('_', ' ')}
+              {row.role.replace(/_/g, ' ')}
             </span>
           ),
         },

@@ -23,7 +23,7 @@ pool.on("connect", () => {
 pool.on("error", (err) => {
   console.error("❌ Unexpected PostgreSQL error:", err.message);
   process.exit(1);
-});
+}); 
 
 /**
  * Usage: query("SELECT * FROM users WHERE id = $1", [userId])

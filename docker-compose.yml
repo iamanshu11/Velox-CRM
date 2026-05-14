@@ -6,17 +6,22 @@
 #  postgres   PostgreSQL 16 database (auto-runs migrations on first boot)
 #  backend    Express API          → http://localhost:5000
 #  seed       One-shot seed runner (creates super-admin, then exits)
+#             — behind the "seed" profile; NOT started by `docker compose up`
+#  migrate    One-shot migration runner (safe for existing DB volumes)
+#             — behind the "migrate" profile; run on demand
 #  frontend   React SPA via nginx  → http://localhost:3000
 #
 #  Quick start
 #  ───────────
 #  1. Copy .env.example → .env and fill in JWT_SECRET
-#  2. docker compose up --build
-#  3. Open http://localhost:3000
-#     Login: admin@crm.com / Admin@1234  (change after first login!)
+#  2. docker compose up --build               # postgres + backend + frontend
+#  3. docker compose run --rm seed            # creates the super-admin (once)
+#  4. Open http://localhost:3000
+#     Login: admin@crm.com / VeloxAdmin@2026!  (change after first login!)
 #
-#  To re-run the seed manually:
-#    docker compose run --rm seed
+#  Optional, on demand:
+#    docker compose run --rm seed             # re-run seed (idempotent)
+#    docker compose run --rm migrate          # apply new migrations to an existing DB
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -35,6 +40,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
       # Auto-run the schema migration on first boot
       - ./backend/database/migrations/001_create_users_table.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./backend/database/migrations/002_expand_user_roles.sql:/docker-entrypoint-initdb.d/02_roles.sql:ro
+      - ./backend/database/migrations/003_create_customers_table.sql:/docker-entrypoint-initdb.d/03_customers.sql:ro
+      - ./backend/database/migrations/004_migrate_customers_legacy_to_personal.sql:/docker-entrypoint-initdb.d/04_customers_personal.sql:ro
+      - ./backend/database/migrations/005_create_services_table.sql:/docker-entrypoint-initdb.d/05_services.sql:ro
+      - ./backend/database/migrations/006_create_customer_services_table.sql:/docker-entrypoint-initdb.d/06_customer_services.sql:ro
+      - ./backend/database/migrations/007_drop_services_code_check.sql:/docker-entrypoint-initdb.d/07_drop_services_check.sql:ro
+      - ./backend/database/migrations/008_unique_customer_email.sql:/docker-entrypoint-initdb.d/08_unique_customer_email.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -63,6 +75,9 @@ services:
       # JWT — override JWT_SECRET in your .env file!
       JWT_SECRET:       ${JWT_SECRET:-change_this_to_a_long_random_secret}
       JWT_EXPIRES_IN:   7d
+      # The auth cookie is httpOnly. Set COOKIE_SECURE=true once you serve
+      # this stack behind HTTPS; leaving it false keeps localhost dev working.
+      COOKIE_SECURE:    ${COOKIE_SECURE:-false}
       # Allow requests from the frontend container
       ALLOWED_ORIGINS:  http://localhost:3000
     ports:
@@ -71,10 +86,13 @@ services:
       postgres:
         condition: service_healthy
 
-  # ── Seed (one-shot) ─────────────────────────────────────────
+  # ── Seed (one-shot, on demand) ──────────────────────────────
   # Creates the super-admin account if it does not already exist.
-  # Runs once then exits — safe to re-run at any time.
+  # Hidden behind the "seed" profile so `docker compose up` doesn't pay the
+  # ~5s startup overhead on every restart. Run it explicitly:
+  #   docker compose run --rm seed
   seed:
+    profiles: ["seed"]
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -86,6 +104,28 @@ services:
       DB_USER:     postgres
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
     command: ["node", "database/seeds/superAdminSeed.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # ── Migrate (one-shot, on demand) ───────────────────────────
+  # Use this to apply migrations to an existing DB volume:
+  #   docker compose run --rm migrate
+  migrate:
+    profiles: ["migrate"]
+    image: postgres:16-alpine
+    container_name: velox_migrate
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - ./backend/database/migrations:/migrations:ro
+    command:
+      [
+        "sh",
+        "-c",
+        "psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/001_create_users_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/002_expand_user_roles.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/003_create_customers_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/004_migrate_customers_legacy_to_personal.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/005_create_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/006_create_customer_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/007_drop_services_code_check.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/008_unique_customer_email.sql"
+      ]
     depends_on:
       postgres:
         condition: service_healthy

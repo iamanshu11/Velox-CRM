@@ -21,33 +21,54 @@ const pool = new Pool({
 const SUPER_ADMIN = {
   name:     "Super Admin",
   email:    "admin@crm.com",
-  password: "Admin@1234", 
+  // Meets app password policy (length + upper/lower/digit/special)
+  password: "VeloxAdmin@2026!",
   role:     "super_admin",
 };
 
 const seed = async () => {
   const client = await pool.connect();
   try {
+    const emailNorm = SUPER_ADMIN.email.trim().toLowerCase();
+    const hashedPassword = await bcrypt.hash(SUPER_ADMIN.password, 10);
+
     const { rows } = await client.query(
-      "SELECT id FROM users WHERE email = $1 LIMIT 1",
-      [SUPER_ADMIN.email]
+      "SELECT id FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1",
+      [emailNorm]
     );
 
     if (rows.length > 0) {
-      console.log("ℹ️  Super Admin already exists — skipping seed");
+      await client.query(
+        `UPDATE users
+            SET name = $1,
+                email = $2,
+                password = $3,
+                role = $4,
+                is_active = true
+          WHERE id = $5`,
+        [
+          SUPER_ADMIN.name,
+          emailNorm,
+          hashedPassword,
+          SUPER_ADMIN.role,
+          rows[0].id,
+        ]
+      );
+      console.log("🔐 Super Admin already existed — password reset and account synced.");
+      console.log(`   Email   : ${emailNorm}`);
+      console.log(`   Password: ${SUPER_ADMIN.password}`);
+      console.log("   ⚠️  Change the password after first login!\n");
       return;
     }
-
-    const hashedPassword = await bcrypt.hash(SUPER_ADMIN.password, 10);
 
     await client.query(
       `INSERT INTO users (name, email, password, role)
        VALUES ($1, $2, $3, $4)`,
-      [SUPER_ADMIN.name, SUPER_ADMIN.email, hashedPassword, SUPER_ADMIN.role]
+      [SUPER_ADMIN.name, emailNorm, hashedPassword, SUPER_ADMIN.role]
     );
 
     console.log("🎉 Super Admin seeded successfully!");
-    console.log(`   Email   : ${SUPER_ADMIN.email}`);
+    console.log(`   Email   : ${emailNorm}`);
     console.log(`   Password: ${SUPER_ADMIN.password}`);
     console.log("   ⚠️  Change the password after first login!\n");
   } catch (err) {

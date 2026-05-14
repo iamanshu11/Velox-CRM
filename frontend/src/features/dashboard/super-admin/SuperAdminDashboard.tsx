@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import { useEmployees } from '@/features/employees/hooks/useEmployees'
+import {
+  useEmployees,
+  useEmployeeStats,
+} from '@/features/employees/hooks/useEmployees'
 import StatsCards from './components/StatsCards'
 import RecentEmployees from './components/RecentEmployees'
 import { Card, CardHeader } from '@/components/ui/Card'
@@ -9,12 +12,22 @@ import Button from '@/components/ui/Button'
 import CreateEmployeeModal from '@/features/employees/components/CreateEmployeeModal'
 
 export default function SuperAdminDashboard() {
-  const { user } = useAuthStore()
-  const { data: employees = [], isLoading } = useEmployees()
+  const user = useAuthStore((s) => s.user)
+  // Stats card values come from a cheap aggregate endpoint so they stay
+  // accurate even after pagination was introduced on the list endpoint.
+  const { data: stats, isLoading: statsLoading } = useEmployeeStats()
+  // Recent users list only needs the first page; default page size of 20
+  // is plenty for the "latest 5" slice rendered below.
+  const { data: recent, isLoading: recentLoading } = useEmployees({
+    page: 1,
+    pageSize: 5,
+  })
   const [showCreate, setShowCreate] = useState(false)
 
-  const active = employees.filter((e) => e.is_active).length
-  const inactive = employees.filter((e) => !e.is_active).length
+  const total = stats?.total ?? 0
+  const active = stats?.active ?? 0
+  const inactive = stats?.inactive ?? 0
+  const recentItems = recent?.items ?? []
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -34,23 +47,23 @@ export default function SuperAdminDashboard() {
           className="shrink-0"
         >
           <Plus size={15} />
-          Add Employee
+          Add User
         </Button>
       </div>
 
       {/* Stats */}
       <StatsCards
-        total={employees.length}
+        total={total}
         active={active}
         inactive={inactive}
-        loading={isLoading}
+        loading={statsLoading}
       />
 
-      {/* Recent employees */}
+      {/* Recent users */}
       <Card>
         <CardHeader
-          title="Recent Employees"
-          description="Latest team members added to the system"
+          title="Recent Users"
+          description="Latest CRM users added to the system"
           action={
             <Button
               variant="outline"
@@ -62,7 +75,7 @@ export default function SuperAdminDashboard() {
             </Button>
           }
         />
-        {isLoading ? (
+        {recentLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3 animate-pulse">
@@ -75,7 +88,7 @@ export default function SuperAdminDashboard() {
             ))}
           </div>
         ) : (
-          <RecentEmployees employees={employees} />
+          <RecentEmployees employees={recentItems} total={total} />
         )}
       </Card>
 

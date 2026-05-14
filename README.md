@@ -22,13 +22,24 @@ Open `.env` and set a strong `JWT_SECRET` (generate one with `openssl rand -hex 
 docker compose up --build
 ```
 
-This single command will:
-- Start a **PostgreSQL 16** database and run the schema migration automatically
+This will:
+- Start a **PostgreSQL 16** database and run the schema migrations automatically
 - Build and start the **Express API** on `http://localhost:5000`
-- Create the **super-admin** account (one-shot seed)
 - Build and serve the **React SPA** via nginx on `http://localhost:3000`
 
-### 3. Open the app
+### 3. Create the super-admin (first time only)
+
+The `seed` service is on demand — it does not run as part of `docker compose up`,
+so subsequent restarts are not slowed down by a re-seed pass.
+
+```bash
+docker compose run --rm seed
+```
+
+The script is idempotent: it creates the super-admin if missing, or resets
+its password to the documented default if the row already exists.
+
+### 4. Open the app
 
 ```
 http://localhost:3000
@@ -37,7 +48,7 @@ http://localhost:3000
 | Field    | Value           |
 |----------|-----------------|
 | Email    | admin@crm.com   |
-| Password | Admin@1234      |
+| Password | VeloxAdmin@2026! |
 
 > ⚠️  **Change the password after your first login.**
 
@@ -52,7 +63,8 @@ http://localhost:3000
 | `docker compose down` | Stop and remove containers |
 | `docker compose down -v` | Stop and **delete all data** (wipes the DB) |
 | `docker compose logs -f backend` | Stream backend logs |
-| `docker compose run --rm seed` | Re-run the super-admin seed |
+| `docker compose run --rm seed` | Re-run the super-admin seed (on demand) |
+| `docker compose run --rm migrate` | Apply pending migrations to an existing DB |
 
 ---
 

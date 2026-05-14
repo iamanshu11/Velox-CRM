@@ -10,7 +10,7 @@
 --  email        VARCHAR(255)   NOT NULL, UNIQUE
 --  password     TEXT           NOT NULL  (bcrypt hash, never store plain text)
 --  role         user_role      NOT NULL, DEFAULT 'employee'
---                              ENUM: 'super_admin' | 'employee'
+--                              ENUM: 'super_admin' | 'admin' | 'employee' | 'agent' | 'affiliate'
 --  is_active    BOOLEAN        NOT NULL, DEFAULT TRUE
 --  created_by   INTEGER        FK → users(id), nullable (NULL for super admin)
 --  created_at   TIMESTAMPTZ    NOT NULL, DEFAULT NOW()

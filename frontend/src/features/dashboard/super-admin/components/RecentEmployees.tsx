@@ -7,17 +7,19 @@ import { formatDate } from '@/lib/utils'
 
 interface Props {
   employees: Employee[]
+  total?: number
 }
 
-export default function RecentEmployees({ employees }: Props) {
+export default function RecentEmployees({ employees, total }: Props) {
   const recent = employees.slice(0, 5)
+  const totalCount = total ?? employees.length
 
   return (
     <div>
       <div className="space-y-3">
         {recent.length === 0 ? (
           <p className="text-sm text-gray-500 py-4 text-center">
-            No employees yet. Create your first one above.
+            No users yet. Create your first one above.
           </p>
         ) : (
           recent.map((emp) => (
@@ -43,12 +45,12 @@ export default function RecentEmployees({ employees }: Props) {
         )}
       </div>
 
-      {employees.length > 5 && (
+      {totalCount > recent.length && (
         <Link
           to="/dashboard/employees"
           className="mt-4 flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
         >
-          View all {employees.length} employees
+          View all {totalCount} users
           <ArrowRight size={14} />
         </Link>
       )}

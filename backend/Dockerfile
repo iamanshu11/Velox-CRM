@@ -9,8 +9,9 @@ RUN apk add --no-cache dumb-init
 
 WORKDIR /app
 
-# Copy package files first for better layer caching
-COPY node-crm/package*.json ./
+# Copy package files + .npmrc (retry/timeout tuning) first for better
+# layer caching.
+COPY node-crm/package*.json node-crm/.npmrc ./
 
 # Install production dependencies only
 RUN npm ci --omit=dev

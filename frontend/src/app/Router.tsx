@@ -8,6 +8,7 @@ import SuperAdminDashboard from '@/features/dashboard/super-admin/SuperAdminDash
 import EmployeeDashboard from '@/features/dashboard/employee/EmployeeDashboard'
 import EmployeesPage from '@/features/employees/pages/EmployeesPage'
 import SettingsPage from '@/features/settings/pages/SettingsPage'
+import CustomersPage from '@/features/customers/pages/CustomersPage'
 import DashboardRedirect from './DashboardRedirect'
 
 const router = createBrowserRouter([
@@ -29,17 +30,27 @@ const router = createBrowserRouter([
 
           // Super Admin routes
           {
-            element: <RoleGuard allowedRoles={['super_admin']} />,
+            element: <RoleGuard allowedRoles={['super_admin', 'admin']} />,
             children: [
               { path: '/dashboard/admin', element: <SuperAdminDashboard /> },
-              { path: '/dashboard/employees', element: <EmployeesPage /> },
               { path: '/dashboard/settings', element: <SettingsPage /> },
             ],
           },
 
+          // User management route for creator roles
+          {
+            element: <RoleGuard allowedRoles={['super_admin', 'admin', 'employee']} />,
+            children: [{ path: '/dashboard/employees', element: <EmployeesPage /> }],
+          },
+
+          {
+            element: <RoleGuard allowedRoles={['super_admin', 'admin', 'employee', 'agent', 'affiliate']} />,
+            children: [{ path: '/dashboard/customers', element: <CustomersPage /> }],
+          },
+
           // Employee routes
           {
-            element: <RoleGuard allowedRoles={['employee']} />,
+            element: <RoleGuard allowedRoles={['employee', 'agent', 'affiliate']} />,
             children: [{ path: '/dashboard/me', element: <EmployeeDashboard /> }],
           },
 

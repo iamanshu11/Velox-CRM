@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { LogOut, ChevronDown, Bell, PanelLeftClose, PanelLeftOpen, Menu } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
+import { authService } from '@/features/auth/authService'
 import Avatar from '@/components/ui/Avatar'
 import { cn } from '@/lib/utils'
 
@@ -15,8 +17,17 @@ export default function Header({
   onToggleDesktopSidebar,
   onToggleMobileSidebar,
 }: HeaderProps) {
-  const { user, logout } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
+  const clearAuth = useAuthStore((s) => s.clearAuth)
+  const navigate = useNavigate()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+
+  const handleSignOut = async () => {
+    setDropdownOpen(false)
+    await authService.logout()
+    clearAuth()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
@@ -42,16 +53,24 @@ export default function Header({
           Welcome back, {user?.name?.split(' ')[0]} 👋
         </h1>
         <p className="text-xs text-gray-400 capitalize hidden sm:block">
-          {user?.role?.replace('_', ' ')}
+          {user?.role?.replace(/_/g, ' ')}
         </p>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        {/* Notification bell */}
-        <button className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+        {/* Notification bell — placeholder until the notifications feature ships.
+            We intentionally do NOT render an unread-indicator dot here because
+            the underlying notification state does not exist yet, and a fake dot
+            is worse than no dot at all. */}
+        <button
+          type="button"
+          aria-label="Notifications (no new notifications)"
+          title="Notifications"
+          disabled
+          className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+        >
           <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-indigo-500" />
         </button>
 
         {/* User dropdown */}
@@ -89,10 +108,7 @@ export default function Header({
                   <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                 </div>
                 <button
-                  onClick={() => {
-                    setDropdownOpen(false)
-                    logout()
-                  }}
+                  onClick={handleSignOut}
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <LogOut size={15} />

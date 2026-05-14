@@ -1,13 +1,8 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-
-const ROLE_HOME: Record<string, string> = {
-  super_admin: '/dashboard/admin',
-  employee: '/dashboard/me',
-  // Future: affiliate: '/dashboard/affiliate', agent: '/dashboard/agent'
-}
+import { getRoleHome } from '@/config/roles'
 
 export default function DashboardRedirect() {
-  const role = useAuthStore((s) => s.user?.role ?? 'employee')
-  return <Navigate to={ROLE_HOME[role] ?? '/login'} replace />
+  const role = useAuthStore((s) => s.user?.role)
+  return <Navigate to={getRoleHome(role)} replace />
 }

@@ -1,11 +1,5 @@
 import { query } from "../../config/db.js";
 
-/**
- * User Model
- * All direct PostgreSQL queries for the `users` table live here.
- * Services call these functions — never write raw SQL in controllers.
- */
-
 const User = {
 
   /** Find a user by email. Pass { includePassword: true } when you need the hash. */
@@ -42,15 +36,33 @@ const User = {
     return rows[0];
   },
 
-  /** Return all employees (role = 'employee'), newest first. */
-  findAllEmployees: async () => {
+  /** Return CRM users, newest first, with pagination. */
+  findAllUsers: async ({ limit, offset } = {}) => {
     const { rows } = await query(
       `SELECT id, name, email, role, is_active, created_at
          FROM users
-        WHERE role = 'employee'
-        ORDER BY created_at DESC`
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2`,
+      [limit, offset]
     );
     return rows;
+  },
+
+  countAllUsers: async () => {
+    const { rows } = await query(`SELECT COUNT(*)::int AS total FROM users`);
+    return rows[0].total;
+  },
+
+  /** Cheap aggregate for dashboard cards. */
+  getUserStats: async () => {
+    const { rows } = await query(
+      `SELECT
+         COUNT(*)::int                                            AS total,
+         COUNT(*) FILTER (WHERE is_active = TRUE)::int            AS active,
+         COUNT(*) FILTER (WHERE is_active = FALSE)::int           AS inactive
+       FROM users`
+    );
+    return rows[0];
   },
 
   /** Toggle is_active for a user. Returns updated row. */

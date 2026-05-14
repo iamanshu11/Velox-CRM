@@ -1,18 +1,22 @@
 import { Router } from "express";
 import {
+  handleCreateUser,
   handleCreateEmployee,
-  handleGetEmployees,
+  handleGetUsers,
+  handleGetUserStats,
   handleToggleStatus,
 } from "../controllers/userController.js";
 import { authenticate, authorizeRoles } from "../middleware/auth.js";
 
 const router = Router();
 
-// All routes below require a valid JWT
 router.use(authenticate);
 
-router.post("/employees",            authorizeRoles("super_admin"), handleCreateEmployee);
-router.get("/employees",             authorizeRoles("super_admin"), handleGetEmployees);
+router.post("/",                     authorizeRoles("super_admin", "admin", "employee"), handleCreateUser);
+router.get("/",                      authorizeRoles("super_admin", "admin"), handleGetUsers);
+router.get("/stats",                 authorizeRoles("super_admin", "admin"), handleGetUserStats);
+router.post("/employees",            authorizeRoles("super_admin", "admin"), handleCreateEmployee);
+router.get("/employees",             authorizeRoles("super_admin", "admin"), handleGetUsers);
 router.patch("/:id/toggle-status",   authorizeRoles("super_admin"), handleToggleStatus);
 
 export default router;

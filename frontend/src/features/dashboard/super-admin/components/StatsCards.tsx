@@ -59,13 +59,13 @@ export default function StatsCards({ total, active, inactive, loading }: StatsCa
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <StatCard
-        label="Total Employees"
+        label="Total Users"
         value={total}
         icon={<Users size={20} className="text-indigo-600" />}
         iconBg="bg-indigo-50"
       />
       <StatCard
-        label="Active Employees"
+        label="Active Users"
         value={active}
         icon={<UserCheck size={20} className="text-emerald-600" />}
         iconBg="bg-emerald-50"
@@ -73,7 +73,7 @@ export default function StatsCards({ total, active, inactive, loading }: StatsCa
         trendUp={active > inactive}
       />
       <StatCard
-        label="Inactive Employees"
+        label="Inactive Users"
         value={inactive}
         icon={<UserX size={20} className="text-red-500" />}
         iconBg="bg-red-50"

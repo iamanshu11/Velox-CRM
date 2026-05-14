@@ -19,7 +19,7 @@ export default function Sidebar({
   const navItems = SIDEBAR_CONFIG[user?.role ?? 'employee'] ?? []
   const shouldCollapse = isDesktopCollapsed && !isMobileOpen
 
-  const roleLabel = user?.role?.replace('_', ' ') ?? ''
+  const roleLabel = user?.role?.replace(/_/g, ' ') ?? ''
 
   return (
     <>

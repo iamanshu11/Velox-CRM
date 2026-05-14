@@ -1,4 +1,6 @@
-import { defineConfig } from 'vite'
+// Use `vitest/config`'s defineConfig (which augments Vite's UserConfig with
+// the `test` field) so this file is valid in both `vite build` and `vitest`.
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -12,5 +14,12 @@ export default defineConfig({
     alias: {
       '@': srcDir,
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 })

@@ -4,22 +4,42 @@ import { useAuthStore } from '@/store/authStore'
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api',
   headers: { 'Content-Type': 'application/json' },
+  // Send / receive the httpOnly auth cookie on every request.
+  withCredentials: true,
 })
 
-// Attach JWT to every request automatically
+// Request logger — purely for dev observability.
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  const method = (config.method ?? 'get').toUpperCase()
+  console.info(`[API] ${method} ${config.baseURL ?? ''}${config.url ?? ''} -> pending`)
   return config
 })
 
-// Handle 401 globally — clear session, redirect to login
+// Global response handler:
+//   • Success: log status
+//   • 401 anywhere except /auth/login or /auth/me: clear in-memory user and
+//     bounce to /login. /auth/me intentionally tolerates 401 because it is
+//     also used as a "is my session still valid?" probe on app mount.
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const method = (res.config.method ?? 'get').toUpperCase()
+    console.info(`[API] ${method} ${res.config.url ?? ''} -> ${res.status}`)
+    return res
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().logout()
-      window.location.href = '/login'
+    const status = error.response?.status ?? 'NETWORK_ERROR'
+    const method = (error.config?.method ?? 'get').toUpperCase()
+    const url: string = error.config?.url ?? ''
+    console.error(`[API] ${method} ${url} -> ${status}`, error.response?.data ?? error.message)
+
+    const isLoginRequest = typeof url === 'string' && url.includes('/auth/login')
+    const isMeRequest = typeof url === 'string' && url.includes('/auth/me')
+
+    if (error.response?.status === 401 && !isLoginRequest && !isMeRequest) {
+      useAuthStore.getState().clearAuth()
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

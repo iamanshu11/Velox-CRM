@@ -3,6 +3,7 @@ import {
   Users,
   Settings,
   UserCircle,
+  ContactRound,
   // Future: Handshake, UserCheck
 } from 'lucide-react'
 import type { NavItem, UserRole } from '@/types'
@@ -10,22 +11,29 @@ import type { NavItem, UserRole } from '@/types'
 export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
   super_admin: [
     { label: 'Dashboard', path: '/dashboard/admin', icon: LayoutDashboard },
-    { label: 'Employees', path: '/dashboard/employees', icon: Users },
+    { label: 'Users', path: '/dashboard/employees', icon: Users },
+    { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
+    { label: 'Settings', path: '/dashboard/settings', icon: Settings },
+  ],
+
+  admin: [
+    { label: 'Dashboard', path: '/dashboard/admin', icon: LayoutDashboard },
+    { label: 'Users', path: '/dashboard/employees', icon: Users },
+    { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
     { label: 'Settings', path: '/dashboard/settings', icon: Settings },
   ],
 
   employee: [
+    { label: 'Users', path: '/dashboard/employees', icon: Users },
+    { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
     { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },
-    // Add more employee links here as features grow
   ],
-
-  // ────────────────────────────────────────────────────────────────
-  // FUTURE ROLES — add entries here, zero structural changes needed
-  // affiliate: [
-  //   { label: 'My Dashboard', path: '/dashboard/affiliate', icon: Handshake },
-  // ],
-  // agent: [
-  //   { label: 'My Dashboard', path: '/dashboard/agent', icon: UserCheck },
-  // ],
-  // ────────────────────────────────────────────────────────────────
+  agent: [
+    { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
+    { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },
+  ],
+  affiliate: [
+    { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
+    { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },
+  ],
 }

@@ -5,7 +5,7 @@
 
 -- Enum type for roles
 DO $$ BEGIN
-  CREATE TYPE user_role AS ENUM ('super_admin', 'employee');
+  CREATE TYPE user_role AS ENUM ('super_admin', 'admin', 'employee', 'agent', 'affiliate');
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   role         user_role     NOT NULL DEFAULT 'employee',
   is_active    BOOLEAN       NOT NULL DEFAULT TRUE,
   created_by   INTEGER       REFERENCES users(id) ON DELETE SET NULL,
-  created_at   TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  created_at   TIMESTAMPTZ   NOT NULL DEFAULT NOW(), 
   updated_at   TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 

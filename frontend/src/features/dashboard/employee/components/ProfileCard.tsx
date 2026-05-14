@@ -22,7 +22,7 @@ export default function ProfileCard({ user }: Props) {
         <div className="space-y-1">
           <h3 className="text-xl font-bold text-gray-900">{user.name}</h3>
           <p className="text-sm text-gray-500 capitalize">
-            {user.role.replace('_', ' ')}
+            {user.role.replace(/_/g, ' ')}
           </p>
         </div>
 
@@ -33,7 +33,7 @@ export default function ProfileCard({ user }: Props) {
           </div>
           <div className="flex items-center gap-3 text-sm text-gray-600">
             <Shield size={16} className="text-gray-400 shrink-0" />
-            <span className="capitalize">{user.role.replace('_', ' ')}</span>
+            <span className="capitalize">{user.role.replace(/_/g, ' ')}</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
             <Activity size={16} className="text-gray-400 shrink-0" />
