@@ -1,17 +1,15 @@
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
+import { getClient } from "../../config/db.js";
+import { ALLOWED_ROLES, ROLE_CREATION_MATRIX } from "../config/crmRoles.js";
 import { validatePassword } from "../utils/passwordPolicy.js";
-
-const ALLOWED_ROLES = ["super_admin", "admin", "employee", "agent", "affiliate"];
-
-const ROLE_CREATION_MATRIX = {
-  super_admin: ["super_admin", "admin", "employee", "agent", "affiliate"],
-  admin: ["employee", "agent", "affiliate"],
-  employee: ["agent", "affiliate"],
-};
+import { insertUserOnboardingApprovalInTransaction } from "./approvalService.js";
+import { roleRequiresOnboardingApproval } from "../config/approvalRbac.js";
 
 /**
  * Creates a new CRM user account with role hierarchy checks.
+ * When the new role requires onboarding approval, a user_onboarding ticket
+ * is created in the same transaction so moderators see it immediately.
  */
 export const createUser = async ({ name, email, password, role }, creator) => {
   const targetRole = role?.trim?.();
@@ -45,15 +43,40 @@ export const createUser = async ({ name, email, password, role }, creator) => {
 
   const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
-  const user = await User.create({
-    name,
-    email: normalizedEmail,
-    password: hashedPassword,
-    role: targetRole,
-    createdBy: creator.id,
-  });
+  const client = await getClient();
+  try {
+    await client.query("BEGIN");
 
-  return user;
+    const pendingOnboarding = roleRequiresOnboardingApproval(targetRole);
+
+    const user = await User.create(
+      {
+        name,
+        email: normalizedEmail,
+        password: hashedPassword,
+        role: targetRole,
+        createdBy: creator.id,
+        isActive: !pendingOnboarding,
+      },
+      { client }
+    );
+
+    await insertUserOnboardingApprovalInTransaction(client, creator, user);
+
+    await client.query("COMMIT");
+    return user;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    if (err.code === "23505") {
+      throw {
+        status: 409,
+        message: "An open approval request already exists for this user",
+      };
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 /**

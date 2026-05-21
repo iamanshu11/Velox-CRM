@@ -13,7 +13,7 @@ import type { User } from '@/types'
  * without an extra round-trip; AuthProvider re-validates the session via
  * GET /api/auth/me on mount and clears the user if the cookie has expired.
  */
-interface AuthState {
+export interface AuthState {
   user: User | null
   setUser: (user: User | null) => void
   clearAuth: () => void

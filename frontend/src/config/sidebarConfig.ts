@@ -4,7 +4,7 @@ import {
   Settings,
   UserCircle,
   ContactRound,
-  // Future: Handshake, UserCheck
+  ClipboardList,
 } from 'lucide-react'
 import type { NavItem, UserRole } from '@/types'
 
@@ -13,6 +13,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { label: 'Dashboard', path: '/dashboard/admin', icon: LayoutDashboard },
     { label: 'Users', path: '/dashboard/employees', icon: Users },
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
+    { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
     { label: 'Settings', path: '/dashboard/settings', icon: Settings },
   ],
 
@@ -20,20 +21,24 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { label: 'Dashboard', path: '/dashboard/admin', icon: LayoutDashboard },
     { label: 'Users', path: '/dashboard/employees', icon: Users },
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
+    { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
     { label: 'Settings', path: '/dashboard/settings', icon: Settings },
   ],
 
   employee: [
     { label: 'Users', path: '/dashboard/employees', icon: Users },
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
+    { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
     { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },
   ],
   agent: [
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
+    { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
     { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },
   ],
   affiliate: [
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
+    { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
     { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },
   ],
 }

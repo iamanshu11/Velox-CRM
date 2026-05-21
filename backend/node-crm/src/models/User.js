@@ -1,5 +1,8 @@
 import { query } from "../../config/db.js";
 
+const run = (client, text, params) =>
+  client ? client.query(text, params) : query(text, params);
+
 const User = {
 
   /** Find a user by email. Pass { includePassword: true } when you need the hash. */
@@ -26,14 +29,31 @@ const User = {
   },
 
   /** Create a new user row. Returns the created user (no password). */
-  create: async ({ name, email, password, role = "employee", createdBy = null }) => {
-    const { rows } = await query(
-      `INSERT INTO users (name, email, password, role, created_by)
-       VALUES ($1, $2, $3, $4, $5)
+  create: async (
+    { name, email, password, role = "employee", createdBy = null, isActive = true },
+    { client } = {}
+  ) => {
+    const { rows } = await run(
+      client,
+      `INSERT INTO users (name, email, password, role, created_by, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, name, email, role, is_active, created_at`,
-      [name, email, password, role, createdBy]
+      [name, email, password, role, createdBy, isActive]
     );
     return rows[0];
+  },
+
+  /** Set is_active explicitly (used by onboarding approval outcomes). */
+  setActive: async (id, isActive, { client } = {}) => {
+    const { rows } = await run(
+      client,
+      `UPDATE users
+          SET is_active = $2, updated_at = NOW()
+        WHERE id = $1
+        RETURNING id, is_active`,
+      [id, isActive]
+    );
+    return rows[0] || null;
   },
 
   /** Return CRM users, newest first, with pagination. */

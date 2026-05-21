@@ -47,6 +47,8 @@ services:
       - ./backend/database/migrations/006_create_customer_services_table.sql:/docker-entrypoint-initdb.d/06_customer_services.sql:ro
       - ./backend/database/migrations/007_drop_services_code_check.sql:/docker-entrypoint-initdb.d/07_drop_services_check.sql:ro
       - ./backend/database/migrations/008_unique_customer_email.sql:/docker-entrypoint-initdb.d/08_unique_customer_email.sql:ro
+      - ./backend/database/migrations/009_approval_workflow.sql:/docker-entrypoint-initdb.d/09_approval_workflow.sql:ro
+      - ./backend/database/migrations/010_approval_subject_role_snapshot.sql:/docker-entrypoint-initdb.d/10_approval_role_snapshot.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -124,7 +126,7 @@ services:
       [
         "sh",
         "-c",
-        "psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/001_create_users_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/002_expand_user_roles.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/003_create_customers_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/004_migrate_customers_legacy_to_personal.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/005_create_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/006_create_customer_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/007_drop_services_code_check.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/008_unique_customer_email.sql"
+        "psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/001_create_users_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/002_expand_user_roles.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/003_create_customers_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/004_migrate_customers_legacy_to_personal.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/005_create_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/006_create_customer_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/007_drop_services_code_check.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/008_unique_customer_email.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/009_approval_workflow.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/010_approval_subject_role_snapshot.sql"
       ]
     depends_on:
       postgres:

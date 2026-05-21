@@ -138,6 +138,78 @@ export interface CustomerPayload {
   services?: CustomerServiceAssignmentInput[]
 }
 
+// ── Approvals (workflow) ───────────────────────────────────────────
+// Mirrors backend approvalService.APPROVAL_KINDS / APPROVAL_STATUSES.
+export const APPROVAL_KINDS = ['user_onboarding', 'generic'] as const
+export type ApprovalRequestKind = (typeof APPROVAL_KINDS)[number]
+
+export const APPROVAL_STATUSES = [
+  'pending',
+  'in_review',
+  'approved',
+  'completed',
+  'rejected',
+  'cancelled',
+] as const
+export type ApprovalRequestStatus = (typeof APPROVAL_STATUSES)[number]
+
+export const TERMINAL_APPROVAL_STATUSES: readonly ApprovalRequestStatus[] = [
+  'completed',
+  'rejected',
+  'cancelled',
+] as const
+
+export function isTerminalApprovalStatus(status: ApprovalRequestStatus): boolean {
+  return (TERMINAL_APPROVAL_STATUSES as readonly string[]).includes(status)
+}
+
+export interface ApprovalRequest {
+  id: number
+  kind: ApprovalRequestKind
+  status: ApprovalRequestStatus
+  title: string
+  body: Record<string, unknown> | null
+  requester_id: number
+  subject_user_id: number | null
+  assigned_to_id: number | null
+  decided_by_id: number | null
+  decision_note: string | null
+  created_at: string
+  updated_at: string
+  completed_at: string | null
+  subject_user_role?: UserRole | null
+  subject_user_role_snapshot?: UserRole | null
+  subject_user_current_role?: UserRole | null
+  requester_name?: string | null
+  requester_email?: string | null
+}
+
+export interface ApprovalAction {
+  id: number
+  request_id: number
+  actor_id: number
+  from_status: ApprovalRequestStatus | null
+  to_status: ApprovalRequestStatus
+  note: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+  actor_name: string
+  actor_email: string
+  actor_role: UserRole
+}
+
+export interface ApprovalRequestDetail extends ApprovalRequest {
+  actions: ApprovalAction[]
+}
+
+export interface CreateApprovalRequestPayload {
+  kind: ApprovalRequestKind
+  title: string
+  body?: Record<string, unknown> | null
+  subject_user_id?: number | null
+  assigned_to_id?: number | null
+}
+
 // ── API responses ────────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean

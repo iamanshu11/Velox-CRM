@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
+import approvalRoutes from "./routes/approvalRoutes.js";
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -61,6 +62,7 @@ app.use("/api/auth",  authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/approvals", approvalRoutes);
 
 // ── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

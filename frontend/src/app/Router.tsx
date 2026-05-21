@@ -9,6 +9,7 @@ import EmployeeDashboard from '@/features/dashboard/employee/EmployeeDashboard'
 import EmployeesPage from '@/features/employees/pages/EmployeesPage'
 import SettingsPage from '@/features/settings/pages/SettingsPage'
 import CustomersPage from '@/features/customers/pages/CustomersPage'
+import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
 import DashboardRedirect from './DashboardRedirect'
 
 const router = createBrowserRouter([
@@ -45,7 +46,10 @@ const router = createBrowserRouter([
 
           {
             element: <RoleGuard allowedRoles={['super_admin', 'admin', 'employee', 'agent', 'affiliate']} />,
-            children: [{ path: '/dashboard/customers', element: <CustomersPage /> }],
+            children: [
+              { path: '/dashboard/customers', element: <CustomersPage /> },
+              { path: '/dashboard/approvals', element: <ApprovalsPage /> },
+            ],
           },
 
           // Employee routes

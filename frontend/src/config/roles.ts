@@ -49,6 +49,13 @@ export const ROLE_CREATION_RIGHTS: Record<UserRole, UserRole[]> = {
   affiliate: [],
 }
 
+/** Super Admin / Admin see org-wide approval queues (matches backend approvalRbac). */
+export const APPROVAL_MODERATOR_ROLES: readonly UserRole[] = ['super_admin', 'admin'] as const
+
+export function canViewApprovalQueues(role: UserRole | undefined | null): boolean {
+  return !!role && APPROVAL_MODERATOR_ROLES.includes(role)
+}
+
 /** Convenience helper used in a few render paths. */
 export function getRoleHome(role: UserRole | undefined | null): string {
   if (!role) return '/login'

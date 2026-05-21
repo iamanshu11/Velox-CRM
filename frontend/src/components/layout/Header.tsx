@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { LogOut, ChevronDown, Bell, PanelLeftClose, PanelLeftOpen, Menu } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/features/auth/authService'
+import { canViewApprovalQueues } from '@/config/roles'
+import { usePendingApprovalsCount } from '@/features/approvals/hooks/useApprovals'
 import Avatar from '@/components/ui/Avatar'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +23,8 @@ export default function Header({
   const clearAuth = useAuthStore((s) => s.clearAuth)
   const navigate = useNavigate()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const isModerator = canViewApprovalQueues(user?.role)
+  const { data: pendingCount = 0 } = usePendingApprovalsCount(isModerator)
 
   const handleSignOut = async () => {
     setDropdownOpen(false)
@@ -28,6 +32,11 @@ export default function Header({
     clearAuth()
     navigate('/login', { replace: true })
   }
+
+  const bellLabel =
+    isModerator && pendingCount > 0
+      ? `${pendingCount} approval${pendingCount === 1 ? '' : 's'} need review`
+      : 'Approvals'
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
@@ -59,18 +68,19 @@ export default function Header({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        {/* Notification bell — placeholder until the notifications feature ships.
-            We intentionally do NOT render an unread-indicator dot here because
-            the underlying notification state does not exist yet, and a fake dot
-            is worse than no dot at all. */}
         <button
           type="button"
-          aria-label="Notifications (no new notifications)"
-          title="Notifications"
-          disabled
-          className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+          onClick={() => navigate('/dashboard/approvals')}
+          aria-label={bellLabel}
+          title={bellLabel}
+          className="relative p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
         >
           <Bell size={18} />
+          {isModerator && pendingCount > 0 && (
+            <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-semibold text-white leading-none">
+              {pendingCount > 99 ? '99+' : pendingCount}
+            </span>
+          )}
         </button>
 
         {/* User dropdown */}

@@ -66,6 +66,32 @@ http://localhost:3000
 | `docker compose run --rm seed` | Re-run the super-admin seed (on demand) |
 | `docker compose run --rm migrate` | Apply pending migrations to an existing DB |
 
+### Approvals API (AF-4)
+
+After migration `009_approval_workflow.sql` is applied, authenticated clients can use:
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/approvals/meta/kinds` | Allowed `kind` values |
+| `GET` | `/api/approvals/meta/statuses` | Allowed `status` values |
+| `GET` | `/api/approvals/meta/pending-count` | `{ count }` — pending + in_review for moderators (header badge) |
+| `POST` | `/api/approvals` | Create request (`kind`, `title`, optional `body`, optional `subject_user_id` for `user_onboarding`) |
+| `GET` | `/api/approvals?limit=&offset=&status=&kind=&mine=1` | Paginated list (moderators see all unless `mine=1`; others see own) |
+| `GET` | `/api/approvals/:id` | Detail + `actions` audit trail |
+| `PATCH` | `/api/approvals/:id/status` | Body `{ "to_status", "note?" }` — RBAC enforced in `approvalRbac.js` |
+| `PATCH` | `/api/approvals/:id/assign` | Body `{ "assigned_to_id": <user id> \| null }` — moderator reassignment (advisory in v1) |
+
+The SPA exposes **Approvals** under `/dashboard/approvals` (sidebar for all CRM roles).
+
+Creating a CRM user (Admin / Employee / Agent / Affiliate) via **Add New User** automatically
+opens a `user_onboarding` approval ticket for moderators to review.
+
+Edge-case behavior (re-open, duplicates, role snapshots, terminal states) is documented in
+[`docs/approval_edge_cases.md`](docs/approval_edge_cases.md).
+
+Apply migration `010_approval_subject_role_snapshot.sql` on existing databases:
+`docker compose run --rm migrate` (includes 010 in the migrate chain).
+
 ---
 
 ## Project structure

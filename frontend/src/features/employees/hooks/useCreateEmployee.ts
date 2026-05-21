@@ -11,10 +11,12 @@ export function useCreateEmployee(onSuccess?: () => void) {
     mutationFn: (payload: CreateEmployeePayload) => employeeService.create(payload),
     onSuccess: (createdUser) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] })
+      queryClient.invalidateQueries({ queryKey: ['approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['approvals', 'pending-count'] })
       showToast({
         type: 'success',
         title: `${createdUser.role.replace(/_/g, ' ')} created`,
-        message: `${createdUser.name} was added successfully.`,
+        message: `${createdUser.name} was added. They cannot sign in until onboarding is approved.`,
       })
       onSuccess?.()
     },
