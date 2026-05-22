@@ -24,7 +24,7 @@ COPY node-crm/ .
 #   docker compose run --rm seed
 COPY database/ ./database/
 
-EXPOSE 5000
+EXPOSE 5001
 
 # Use dumb-init as PID 1 to handle signals correctly
 ENTRYPOINT ["dumb-init", "--"]

@@ -4,19 +4,19 @@
 #  Services
 #  ────────
 #  postgres   PostgreSQL 16 database (auto-runs migrations on first boot)
-#  backend    Express API          → http://localhost:5000
+#  backend    Express API          → http://localhost:5001
 #  seed       One-shot seed runner (creates super-admin, then exits)
 #             — behind the "seed" profile; NOT started by `docker compose up`
 #  migrate    One-shot migration runner (safe for existing DB volumes)
 #             — behind the "migrate" profile; run on demand
-#  frontend   React SPA via nginx  → http://localhost:3000
+#  frontend   React SPA via nginx  → http://localhost:3001
 #
 #  Quick start
 #  ───────────
 #  1. Copy .env.example → .env and fill in JWT_SECRET
 #  2. docker compose up --build               # postgres + backend + frontend
 #  3. docker compose run --rm seed            # creates the super-admin (once)
-#  4. Open http://localhost:3000
+#  4. Open http://localhost:3001
 #     Login: admin@crm.com / VeloxAdmin@2026!  (change after first login!)
 #
 #  Optional, on demand:
@@ -66,7 +66,7 @@ services:
     container_name: velox_backend
     restart: unless-stopped
     environment:
-      PORT:             5000
+      PORT:             5001
       NODE_ENV:         production
       # Database — uses the postgres service name as the host
       DB_HOST:          postgres
@@ -81,9 +81,12 @@ services:
       # this stack behind HTTPS; leaving it false keeps localhost dev working.
       COOKIE_SECURE:    ${COOKIE_SECURE:-false}
       # Allow requests from the frontend container
-      ALLOWED_ORIGINS:  http://localhost:3000
+      ALLOWED_ORIGINS:  http://localhost:3001
+      # Velox eSIM API (separate stack). Use host.docker.internal when Velox runs on the host.
+      VELOX_API_URL:    ${VELOX_API_URL:-http://host.docker.internal:5000}
+      VELOX_API_KEY:    ${VELOX_API_KEY:-}
     ports:
-      - "5000:5000"
+      - "5001:5001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -140,11 +143,11 @@ services:
       dockerfile: Dockerfile
       args:
         # Backend API URL baked into the Vite bundle at build time
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5001/api}
     container_name: velox_frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3001:80"
     depends_on:
       - backend
 

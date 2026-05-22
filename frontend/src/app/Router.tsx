@@ -10,6 +10,7 @@ import EmployeesPage from '@/features/employees/pages/EmployeesPage'
 import SettingsPage from '@/features/settings/pages/SettingsPage'
 import CustomersPage from '@/features/customers/pages/CustomersPage'
 import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
+import VeloxEsimCustomersPage from '@/features/velox-esim/pages/VeloxEsimCustomersPage'
 import DashboardRedirect from './DashboardRedirect'
 
 const router = createBrowserRouter([
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
             element: <RoleGuard allowedRoles={['super_admin', 'admin']} />,
             children: [
               { path: '/dashboard/admin', element: <SuperAdminDashboard /> },
+              { path: '/dashboard/velox-esim', element: <VeloxEsimCustomersPage /> },
               { path: '/dashboard/settings', element: <SettingsPage /> },
             ],
           },

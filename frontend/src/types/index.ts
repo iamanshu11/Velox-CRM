@@ -210,6 +210,57 @@ export interface CreateApprovalRequestPayload {
   assigned_to_id?: number | null
 }
 
+// ── Velox eSIM platform (proxied via CRM backend) ─────────────────
+export type VeloxEsimPlanType = 'country_specific' | 'regional'
+
+export interface VeloxEsimPurchase {
+  orderId: string | null
+  orderNo: string | null
+  planCode: string | null
+  planName: string | null
+  planType: VeloxEsimPlanType | string | null
+  countryCode: string | null
+  region: string | null
+  amountPaid: number
+  currency: string
+  status: string | null
+  purchasedAt: string | null
+}
+
+export interface VeloxEsimCustomer {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  country: string | null
+  countryCode?: string | null
+  isActive: boolean
+  registeredAt: string | null
+  totalOrders: number
+  totalSpent: number
+  lastPurchaseAt: string | null
+  purchases: VeloxEsimPurchase[]
+}
+
+export interface VeloxEsimPagination {
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+export interface VeloxEsimCustomerList {
+  customers: VeloxEsimCustomer[]
+  pagination: VeloxEsimPagination
+}
+
+export interface VeloxEsimIntegrationHealth {
+  configured: boolean
+  reachable: boolean
+  veloxApiUrl?: string
+  message: string
+}
+
 // ── API responses ────────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean

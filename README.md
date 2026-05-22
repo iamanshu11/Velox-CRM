@@ -24,8 +24,8 @@ docker compose up --build
 
 This will:
 - Start a **PostgreSQL 16** database and run the schema migrations automatically
-- Build and start the **Express API** on `http://localhost:5000`
-- Build and serve the **React SPA** via nginx on `http://localhost:3000`
+- Build and start the **Express API** on `http://localhost:5001`
+- Build and serve the **React SPA** via nginx on `http://localhost:3001`
 
 ### 3. Create the super-admin (first time only)
 
@@ -42,7 +42,7 @@ its password to the documented default if the row already exists.
 ### 4. Open the app
 
 ```
-http://localhost:3000
+http://localhost:3001
 ```
 
 | Field    | Value           |
@@ -92,6 +92,11 @@ Edge-case behavior (re-open, duplicates, role snapshots, terminal states) is doc
 Apply migration `010_approval_subject_role_snapshot.sql` on existing databases:
 `docker compose run --rm migrate` (includes 010 in the migrate chain).
 
+### Velox eSIM integration
+
+See [`docs/velox_esim_integration.md`](docs/velox_esim_integration.md). Set `VELOX_API_URL` (port **5000**) and
+`VELOX_API_KEY` on the CRM backend. **eSIM Customers** in the UI is visible to **super_admin** and **admin** only.
+
 ---
 
 ## Project structure
@@ -134,7 +139,7 @@ npm run dev            # nodemon — auto-restarts on file changes
 
 ```bash
 cd frontend
-cp .env.example .env   # set VITE_API_URL=http://localhost:5000/api
+cp .env.example .env   # set VITE_API_URL=http://localhost:5001/api
 npm install
-npm run dev            # Vite dev server → http://localhost:5173
+npm run dev            # Vite dev server → http://localhost:3001
 ```

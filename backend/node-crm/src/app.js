@@ -7,6 +7,7 @@ import userRoutes from "./routes/userRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import approvalRoutes from "./routes/approvalRoutes.js";
+import veloxEsimRoutes from "./routes/veloxEsimRoutes.js";
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -15,7 +16,7 @@ const isProduction = process.env.NODE_ENV === "production";
 // Helmet sets sensible defaults for X-Content-Type-Options, X-Frame-Options,
 // Strict-Transport-Security, Referrer-Policy, etc. We disable the default
 // crossOriginResourcePolicy because the frontend lives on a different origin
-// during local development (localhost:3000 vs localhost:5000).
+// during local development (localhost:3001 vs localhost:5001).
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -24,7 +25,7 @@ app.use(
 );
 
 // ── CORS ────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3000")
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:3001")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -63,6 +64,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/approvals", approvalRoutes);
+app.use("/api/velox-esim", veloxEsimRoutes);
 
 // ── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

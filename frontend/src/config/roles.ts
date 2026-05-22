@@ -56,6 +56,13 @@ export function canViewApprovalQueues(role: UserRole | undefined | null): boolea
   return !!role && APPROVAL_MODERATOR_ROLES.includes(role)
 }
 
+/** Velox eSIM platform customers (matches backend VELOX_ESIM_VIEW_ROLES). */
+export const VELOX_ESIM_VIEW_ROLES: readonly UserRole[] = ['super_admin', 'admin'] as const
+
+export function canViewVeloxEsim(role: UserRole | undefined | null): boolean {
+  return !!role && VELOX_ESIM_VIEW_ROLES.includes(role)
+}
+
 /** Convenience helper used in a few render paths. */
 export function getRoleHome(role: UserRole | undefined | null): string {
   if (!role) return '/login'
