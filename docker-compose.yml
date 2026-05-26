@@ -50,7 +50,7 @@ services:
       - ./backend/database/migrations/009_approval_workflow.sql:/docker-entrypoint-initdb.d/09_approval_workflow.sql:ro
       - ./backend/database/migrations/010_approval_subject_role_snapshot.sql:/docker-entrypoint-initdb.d/10_approval_role_snapshot.sql:ro
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d crm_db"]
       interval: 5s
