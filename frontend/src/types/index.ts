@@ -261,6 +261,19 @@ export interface VeloxEsimIntegrationHealth {
   message: string
 }
 
+// ── Unified customer table (multi-source) ────────────────────────
+/** Identifies which connected service a customer row originates from.
+ * Add new literal values here when integrating additional services. */
+export type CustomerSourceId = 'crm' | 'velox-esim'
+
+/**
+ * Discriminated union for the unified customer table.
+ * The `_key` field is a globally unique row key (e.g. "crm-42", "esim-clx…").
+ */
+export type UnifiedCustomerRow =
+  | { _source: 'crm'; _key: string; data: Customer }
+  | { _source: 'velox-esim'; _key: string; data: VeloxEsimCustomer }
+
 // ── API responses ────────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean

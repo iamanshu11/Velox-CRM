@@ -2,127 +2,142 @@ import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { Table } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
-import type { Customer } from '@/types'
+import type { UnifiedCustomerRow } from '@/types'
+import { CUSTOMER_SOURCES_CONFIG } from '@/config/customerSources'
 import { formatCustomerLegalName } from '../utils'
 
 interface Props {
-  customers: Customer[]
+  rows: UnifiedCustomerRow[]
   loading?: boolean
-  onView: (customer: Customer) => void
-  onEdit: (customer: Customer) => void
-  onDelete?: (customer: Customer) => void
-  deletingId?: number | null
+  onView: (row: UnifiedCustomerRow) => void
+  onEdit: (row: UnifiedCustomerRow) => void
+  onDelete?: (row: UnifiedCustomerRow) => void
+  deletingKey?: string | null
 }
 
 function statusBadgeVariant(status: string): 'success' | 'danger' | 'warning' | 'neutral' {
   const s = status.toLowerCase()
-  if (s === 'inactive' || s === 'archived') return 'danger'
+  if (s === 'inactive' || s === 'archived' || s === 'suspended') return 'danger'
   if (s === 'pending') return 'warning'
   if (s === 'active' || s === 'verified') return 'success'
   return 'neutral'
 }
 
+function getSourceConfig(id: string) {
+  return CUSTOMER_SOURCES_CONFIG.find((s) => s.id === id)
+}
+
+function getDisplayName(row: UnifiedCustomerRow): string {
+  return row._source === 'crm' ? formatCustomerLegalName(row.data) : row.data.name
+}
+
 export default function CustomersTable({
-  customers,
+  rows,
   loading,
   onView,
   onEdit,
   onDelete,
-  deletingId,
+  deletingKey,
 }: Props) {
   return (
     <Table
-      data={customers}
-      keyField="id"
+      data={rows}
+      keyField="_key"
       loading={loading}
-      emptyMessage="No customers found yet."
+      emptyMessage="No customers found."
       columns={[
         {
-          key: 'id',
-          header: 'ID',
-          render: (row) => <span className="text-gray-500 font-mono text-xs">#{row.id}</span>,
+          key: 'service',
+          header: 'Service',
+          render: (row) => {
+            const cfg = getSourceConfig(row._source)
+            if (!cfg) return null
+            return (
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.badgeClass}`}>
+                {cfg.label}
+              </span>
+            )
+          },
         },
         {
           key: 'name',
           header: 'Name',
           render: (row) => (
-            <span className="font-medium text-gray-900">{formatCustomerLegalName(row)}</span>
+            <span className="font-medium text-gray-900">{getDisplayName(row)}</span>
           ),
         },
-        { key: 'email', header: 'Email' },
+        {
+          key: 'email',
+          header: 'Email',
+          render: (row) => <span className="text-gray-700">{row.data.email}</span>,
+        },
         {
           key: 'phone',
           header: 'Phone',
-          render: (row) => <span className="text-gray-600">{row.phone ?? '—'}</span>,
+          render: (row) => (
+            <span className="text-gray-600">{row.data.phone ?? '—'}</span>
+          ),
         },
         {
-          key: 'city',
-          header: 'City / Country',
-          render: (row) => (
-            <span className="text-gray-600">
-              {[row.city, row.country].filter(Boolean).join(', ') || '—'}
-            </span>
-          ),
+          key: 'location',
+          header: 'Location',
+          render: (row) => {
+            if (row._source === 'crm') {
+              const parts = [row.data.city, row.data.country].filter(Boolean)
+              return <span className="text-gray-600">{parts.length ? parts.join(', ') : '—'}</span>
+            }
+            return <span className="text-gray-600">{row.data.country ?? '—'}</span>
+          },
         },
         {
           key: 'status',
           header: 'Status',
-          render: (row) => (
-            <Badge variant={statusBadgeVariant(row.status)} dot>
-              {row.status}
-            </Badge>
-          ),
-        },
-        {
-          key: 'source',
-          header: 'Source',
-          render: (row) => (
-            <div>
-              <p className="text-gray-900 capitalize">{row.source.replace(/-/g, ' ')}</p>
-              {row.source_ref && (
-                <p className="text-xs text-gray-400 truncate max-w-[140px]" title={row.source_ref}>
-                  {row.source_ref}
-                </p>
-              )}
-            </div>
-          ),
-        },
-        {
-          key: 'services',
-          header: 'Services',
           render: (row) => {
-            const items = row.services ?? []
-            if (items.length === 0) return <span className="text-gray-400">—</span>
+            if (row._source === 'crm') {
+              return (
+                <Badge variant={statusBadgeVariant(row.data.status)} dot>
+                  {row.data.status}
+                </Badge>
+              )
+            }
             return (
-              <div className="flex flex-wrap gap-1 max-w-[220px]">
-                {items.slice(0, 3).map((s) => (
-                  <span
-                    key={s.id}
-                    title={`${s.name} · ${s.status}`}
-                    className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200"
-                  >
-                    {s.code}
-                  </span>
-                ))}
-                {items.length > 3 && (
-                  <span className="text-[10px] text-gray-500">+{items.length - 3}</span>
-                )}
-              </div>
+              <Badge variant={row.data.isActive ? 'success' : 'danger'} dot>
+                {row.data.isActive ? 'Active' : 'Inactive'}
+              </Badge>
             )
           },
         },
         {
-          key: 'added_by',
-          header: 'CRM user',
-          render: (row) =>
-            row.added_by_name ? (
-              <div>
-                <p className="text-gray-900 font-medium">{row.added_by_name}</p>
-                <p className="text-xs text-gray-500 capitalize">{row.added_by_role?.replace(/_/g, ' ')}</p>
-              </div>
-            ) : (
-              <span className="text-gray-400">—</span>
-            ),
+          key: 'details',
+          header: 'Orders / Services',
+          render: (row) => {
+            if (row._source === 'crm') {
+              const items = row.data.services ?? []
+              if (items.length === 0) return <span className="text-gray-400">—</span>
+              return (
+                <div className="flex flex-wrap gap-1 max-w-[200px]">
+                  {items.slice(0, 3).map((s) => (
+                    <span
+                      key={s.id}
+                      title={`${s.name} · ${s.status}`}
+                      className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200"
+                    >
+                      {s.code}
+                    </span>
+                  ))}
+                  {items.length > 3 && (
+                    <span className="text-[10px] text-gray-500">+{items.length - 3}</span>
+                  )}
+                </div>
+              )
+            }
+            const { totalOrders, totalSpent } = row.data
+            return (
+              <span className="text-gray-700 text-xs whitespace-nowrap">
+                {totalOrders} {totalOrders === 1 ? 'order' : 'orders'} · ${totalSpent.toFixed(2)}
+              </span>
+            )
+          },
         },
         {
           key: 'actions',
@@ -134,18 +149,20 @@ export default function CustomersTable({
                 <Eye size={14} />
                 View
               </Button>
-              <Button size="sm" variant="outline" onClick={() => onEdit(row)}>
-                <Pencil size={14} />
-                Edit
-              </Button>
-              {onDelete && (
+              {row._source === 'crm' && (
+                <Button size="sm" variant="outline" onClick={() => onEdit(row)}>
+                  <Pencil size={14} />
+                  Edit
+                </Button>
+              )}
+              {row._source === 'crm' && onDelete && (
                 <Button
                   size="sm"
                   variant="outline"
                   className="text-red-600 hover:bg-red-50 border-red-200"
                   onClick={() => onDelete(row)}
-                  loading={deletingId === row.id}
-                  aria-label={`Delete customer ${formatCustomerLegalName(row)}`}
+                  loading={deletingKey === row._key}
+                  aria-label={`Delete customer ${getDisplayName(row)}`}
                 >
                   <Trash2 size={14} />
                   Delete

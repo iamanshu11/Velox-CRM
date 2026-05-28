@@ -11,12 +11,16 @@ export function useVeloxEsimHealth(enabled = true) {
   })
 }
 
-export function useVeloxEsimCustomers(params: ListVeloxEsimParams) {
+export function useVeloxEsimCustomers(
+  params: ListVeloxEsimParams,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ['velox-esim', 'customers', params],
     queryFn: () => veloxEsimApi.list(params),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
+    enabled: options?.enabled !== false,
   })
 }
 
