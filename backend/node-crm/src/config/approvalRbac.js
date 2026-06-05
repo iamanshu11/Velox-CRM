@@ -12,7 +12,7 @@
 
 import { isKnownRole } from "./crmRoles.js";
 
-/** @typedef {'user_onboarding' | 'generic'} ApprovalRequestKind */
+/** @typedef {'user_onboarding' | 'generic' | 'document_verification'} ApprovalRequestKind */
 
 /** @typedef {'pending' | 'in_review' | 'approved' | 'completed' | 'rejected' | 'cancelled'} ApprovalRequestStatus */
 
@@ -143,6 +143,15 @@ export function canModerateGenericApproval(actorRole) {
 }
 
 /**
+ * Super Admin / Admin review (approve/reject) uploaded verification documents.
+ * @param {string | undefined} actorRole
+ * @returns {boolean}
+ */
+export function canModerateDocumentVerification(actorRole) {
+  return isKnownRole(actorRole) && APPROVAL_QUEUE_MODERATOR_ROLES.includes(actorRole);
+}
+
+/**
  * @param {string | undefined} actorRole
  * @returns {boolean}
  */
@@ -221,6 +230,11 @@ export function canApplyApprovalTransition({
 
   if (kind === "generic") {
     return canModerateGenericApproval(actorRole);
+  }
+
+  if (kind === "document_verification") {
+    // Document review is moderator-driven through the full lifecycle.
+    return canModerateDocumentVerification(actorRole);
   }
 
   if (kind === "user_onboarding") {

@@ -5,6 +5,7 @@ import {
   UserCircle,
   ContactRound,
   ClipboardList,
+  ShieldCheck,
 } from 'lucide-react'
 import type { NavItem, UserRole } from '@/types'
 
@@ -14,6 +15,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { label: 'Users', path: '/dashboard/employees', icon: Users },
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
     { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
+    { label: 'Verification', path: '/dashboard/verification-review', icon: ShieldCheck },
     { label: 'Settings', path: '/dashboard/settings', icon: Settings },
   ],
 
@@ -22,21 +24,25 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { label: 'Users', path: '/dashboard/employees', icon: Users },
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
     { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
+    { label: 'Verification', path: '/dashboard/verification-review', icon: ShieldCheck },
     { label: 'Settings', path: '/dashboard/settings', icon: Settings },
   ],
 
   employee: [
+    { label: 'Verification', path: '/dashboard/verification', icon: ShieldCheck },
     { label: 'Users', path: '/dashboard/employees', icon: Users },
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
     { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
     { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },
   ],
   agent: [
+    { label: 'Verification', path: '/dashboard/verification', icon: ShieldCheck },
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
     { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
     { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },
   ],
   affiliate: [
+    { label: 'Verification', path: '/dashboard/verification', icon: ShieldCheck },
     { label: 'Customers', path: '/dashboard/customers', icon: ContactRound },
     { label: 'Approvals', path: '/dashboard/approvals', icon: ClipboardList },
     { label: 'My Profile', path: '/dashboard/me', icon: UserCircle },

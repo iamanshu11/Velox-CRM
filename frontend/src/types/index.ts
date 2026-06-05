@@ -3,12 +3,16 @@ import type { LucideIcon } from 'lucide-react'
 // ── Auth ─────────────────────────────────────────────────────────
 export type UserRole = 'super_admin' | 'admin' | 'employee' | 'agent' | 'affiliate'
 
+export type AccountStatus = 'pending' | 'active' | 'suspended' | 'expired'
+
 export interface User {
   id: number
   name: string
   email: string
   role: UserRole
   is_active: boolean
+  account_status?: AccountStatus
+  verification_deadline?: string | null
 }
 
 // Login response: backend sets the JWT as an httpOnly cookie and only
@@ -140,7 +144,7 @@ export interface CustomerPayload {
 
 // ── Approvals (workflow) ───────────────────────────────────────────
 // Mirrors backend approvalService.APPROVAL_KINDS / APPROVAL_STATUSES.
-export const APPROVAL_KINDS = ['user_onboarding', 'generic'] as const
+export const APPROVAL_KINDS = ['user_onboarding', 'generic', 'document_verification'] as const
 export type ApprovalRequestKind = (typeof APPROVAL_KINDS)[number]
 
 export const APPROVAL_STATUSES = [
@@ -208,6 +212,126 @@ export interface CreateApprovalRequestPayload {
   body?: Record<string, unknown> | null
   subject_user_id?: number | null
   assigned_to_id?: number | null
+}
+
+// ── Verification (KYC documents) ─────────────────────────────────
+// Mirrors backend verificationService.DOCUMENT_STATUSES / VERIFICATION_STATUSES.
+export const DOCUMENT_STATUSES = ['pending', 'in_review', 'approved', 'rejected'] as const
+export type DocumentStatus = (typeof DOCUMENT_STATUSES)[number]
+
+export const VERIFICATION_STATUSES = [
+  'pending',
+  'under_review',
+  'approved',
+  'rejected',
+  'activated',
+  'suspended',
+  'expired',
+] as const
+export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number]
+
+export interface VerificationDocument {
+  id: number
+  user_id: number
+  doc_type: string
+  approval_request_id: number
+  file_name: string
+  original_file_name: string
+  storage_path: string
+  file_url: string | null
+  mime_type: string
+  file_size: number
+  uploaded_at: string
+  archived_at: string | null
+  status: DocumentStatus
+  review_note: string | null
+  reviewed_by: number | null
+  reviewed_at: string | null
+}
+
+/** A row in the per-document progress table (includes "not_uploaded"). */
+export interface VerificationDocRow {
+  doc_type: string
+  label: string
+  required: boolean
+  status: DocumentStatus | 'not_uploaded'
+  review_note: string | null
+  document_id: number | null
+}
+
+export interface VerificationProgress {
+  role: UserRole
+  uploaded: number
+  required_total: number
+  required_approved: number
+  documents_uploaded_label: string
+  can_activate: boolean
+  overall_status: VerificationStatus
+  documents: VerificationDocRow[]
+}
+
+export interface VerificationSubject {
+  id: number
+  name: string
+  email: string
+  role: UserRole
+  account_status: AccountStatus
+  verification_deadline: string | null
+  created_at: string
+  docs_uploaded: number
+  docs_approved: number
+  required_total: number
+  can_activate: boolean
+  verification_status: VerificationStatus
+}
+
+export interface VerificationTimelineEntry {
+  id: number
+  request_id: number
+  actor_id: number
+  from_status: string | null
+  to_status: string
+  note: string | null
+  metadata: Record<string, unknown> | null
+  ip_address: string | null
+  actor_role: string | null
+  created_at: string
+  actor_name: string
+  actor_email: string
+  doc_type: string
+  document_id: number
+}
+
+export interface VerificationDetail {
+  user: {
+    id: number
+    name: string
+    email: string
+    role: UserRole
+    account_status: AccountStatus
+    verification_deadline: string | null
+  }
+  progress: VerificationProgress
+  documents: VerificationDocument[]
+  timeline: VerificationTimelineEntry[]
+}
+
+export interface VerificationMeta {
+  document_statuses: DocumentStatus[]
+  verification_statuses: VerificationStatus[]
+  required_documents: { required: string[]; optional: string[] }
+}
+
+// ── Notifications ─────────────────────────────────────────────────
+export interface AppNotification {
+  id: number
+  user_id: number
+  event: string
+  title: string
+  body: string | null
+  metadata: Record<string, unknown> | null
+  read_at: string | null
+  created_at: string
 }
 
 // ── Velox eSIM platform (proxied via CRM backend) ─────────────────

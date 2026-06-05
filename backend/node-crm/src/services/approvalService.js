@@ -11,7 +11,11 @@ import {
   roleRequiresOnboardingApproval,
 } from "../config/approvalRbac.js";
 
-export const APPROVAL_KINDS = Object.freeze(["user_onboarding", "generic"]);
+export const APPROVAL_KINDS = Object.freeze([
+  "user_onboarding",
+  "generic",
+  "document_verification",
+]);
 
 export const APPROVAL_STATUSES = Object.freeze([
   "pending",

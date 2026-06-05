@@ -10,3 +10,6 @@ node-crm/.env.*.local
 node-crm/*.tsbuildinfo
 .DS_Store
 *.log
+
+# Local document storage (never bake into the image)
+node-crm/uploads

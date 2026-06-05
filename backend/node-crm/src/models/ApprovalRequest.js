@@ -43,13 +43,15 @@ const ApprovalRequest = {
 
   insertAction: async (
     client,
-    { requestId, actorId, fromStatus, toStatus, note, metadata }
+    { requestId, actorId, fromStatus, toStatus, note, metadata, ipAddress, actorRole }
   ) => {
     const { rows } = await run(
       client,
-      `INSERT INTO approval_actions (request_id, actor_id, from_status, to_status, note, metadata)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb)
-       RETURNING id, request_id, actor_id, from_status, to_status, note, metadata, created_at`,
+      `INSERT INTO approval_actions
+         (request_id, actor_id, from_status, to_status, note, metadata, ip_address, actor_role)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)
+       RETURNING id, request_id, actor_id, from_status, to_status, note, metadata,
+         ip_address, actor_role, created_at`,
       [
         requestId,
         actorId,
@@ -57,6 +59,8 @@ const ApprovalRequest = {
         toStatus,
         note ?? null,
         metadata ? JSON.stringify(metadata) : null,
+        ipAddress ?? null,
+        actorRole ?? null,
       ]
     );
     return rows[0];
@@ -180,6 +184,25 @@ const ApprovalRequest = {
           assigned_to_id, decided_by_id, decision_note, created_at, updated_at, completed_at,
           subject_user_role_snapshot`,
       [id, assignedToId]
+    );
+    return rows[0] || null;
+  },
+
+  /** The open (non-terminal) user_onboarding request for a subject, if any. */
+  findOpenOnboardingByUser: async (userId, { client, forUpdate = false } = {}) => {
+    const lock = forUpdate ? " FOR UPDATE OF r" : "";
+    const { rows } = await run(
+      client,
+      `SELECT ${baseSelect}
+         FROM approval_requests r
+         LEFT JOIN users sr ON sr.id = r.subject_user_id
+         LEFT JOIN users rq ON rq.id = r.requester_id
+        WHERE r.subject_user_id = $1
+          AND r.kind = 'user_onboarding'
+          AND r.status NOT IN ('completed','rejected','cancelled')
+        ORDER BY r.created_at DESC
+        LIMIT 1${lock}`,
+      [userId]
     );
     return rows[0] || null;
   },

@@ -7,10 +7,16 @@ import userRoutes from "./routes/userRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import approvalRoutes from "./routes/approvalRoutes.js";
+import verificationRoutes from "./routes/verificationRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import veloxEsimRoutes from "./routes/veloxEsimRoutes.js";
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
+
+// Behind nginx/load balancers — needed so req.ip reflects the real client
+// address for the verification audit log.
+app.set("trust proxy", true);
 
 // ── Security headers (must come BEFORE routes) ──────────────────────────────
 // Helmet sets sensible defaults for X-Content-Type-Options, X-Frame-Options,
@@ -64,6 +70,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/approvals", approvalRoutes);
+app.use("/api/verification", verificationRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/velox-esim", veloxEsimRoutes);
 
 // ── 404 Handler ─────────────────────────────────────────────────────────────

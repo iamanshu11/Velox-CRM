@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/routes/ProtectedRoute'
 import RoleGuard from '@/routes/RoleGuard'
+import VerificationGate from '@/routes/VerificationGate'
 import AppLayout from '@/components/layout/AppLayout'
 import AuthLayout from '@/components/layout/AuthLayout'
 import LoginPage from '@/features/auth/pages/LoginPage'
@@ -10,6 +11,8 @@ import EmployeesPage from '@/features/employees/pages/EmployeesPage'
 import SettingsPage from '@/features/settings/pages/SettingsPage'
 import CustomersPage from '@/features/customers/pages/CustomersPage'
 import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
+import VerificationDashboardPage from '@/features/verification/pages/VerificationDashboardPage'
+import VerificationReviewPage from '@/features/verification/pages/VerificationReviewPage'
 import DashboardRedirect from './DashboardRedirect'
 
 const router = createBrowserRouter([
@@ -26,6 +29,11 @@ const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
+          {
+            // Confines unverified employees/agents/affiliates to the
+            // Verification Dashboard until their account is activated.
+            element: <VerificationGate />,
+            children: [
           // Smart role-based redirect
           { path: '/dashboard', element: <DashboardRedirect /> },
 
@@ -35,6 +43,7 @@ const router = createBrowserRouter([
             children: [
               { path: '/dashboard/admin', element: <SuperAdminDashboard /> },
               { path: '/dashboard/settings', element: <SettingsPage /> },
+              { path: '/dashboard/verification-review', element: <VerificationReviewPage /> },
             ],
           },
 
@@ -55,10 +64,15 @@ const router = createBrowserRouter([
             ],
           },
 
-          // Employee routes
+          // Verification dashboard for users who must complete KYC.
           {
             element: <RoleGuard allowedRoles={['employee', 'agent', 'affiliate']} />,
-            children: [{ path: '/dashboard/me', element: <EmployeeDashboard /> }],
+            children: [
+              { path: '/dashboard/verification', element: <VerificationDashboardPage /> },
+              { path: '/dashboard/me', element: <EmployeeDashboard /> },
+            ],
+          },
+            ],
           },
 
           // ──────────────────────────────────────────────────────────

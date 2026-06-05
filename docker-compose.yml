@@ -49,6 +49,7 @@ services:
       - ./backend/database/migrations/008_unique_customer_email.sql:/docker-entrypoint-initdb.d/08_unique_customer_email.sql:ro
       - ./backend/database/migrations/009_approval_workflow.sql:/docker-entrypoint-initdb.d/09_approval_workflow.sql:ro
       - ./backend/database/migrations/010_approval_subject_role_snapshot.sql:/docker-entrypoint-initdb.d/10_approval_role_snapshot.sql:ro
+      - ./backend/database/migrations/011_document_verification.sql:/docker-entrypoint-initdb.d/11_document_verification.sql:ro
     ports:
       - "5433:5432"
     healthcheck:
@@ -85,6 +86,23 @@ services:
       # Velox eSIM API (separate stack). Use host.docker.internal when Velox runs on the host.
       VELOX_API_URL:    ${VELOX_API_URL:-http://host.docker.internal:5000}
       VELOX_API_KEY:    ${VELOX_API_KEY:-}
+      # Document storage — leave S3_BUCKET empty for local-disk fallback.
+      S3_BUCKET:        ${S3_BUCKET:-}
+      AWS_REGION:       ${AWS_REGION:-us-east-1}
+      S3_PREFIX:        ${S3_PREFIX:-verification/}
+      AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      # Email (notifications) — leave SMTP_HOST empty to log instead of send.
+      SMTP_HOST:        ${SMTP_HOST:-}
+      SMTP_PORT:        ${SMTP_PORT:-587}
+      SMTP_SECURE:      ${SMTP_SECURE:-false}
+      SMTP_USER:        ${SMTP_USER:-}
+      SMTP_PASS:        ${SMTP_PASS:-}
+      MAIL_FROM:        ${MAIL_FROM:-Velox CRM <no-reply@velox-crm.local>}
+      # Verification expiry sweep (in-process daily scheduler).
+      EXPIRY_CRON_DISABLED: ${EXPIRY_CRON_DISABLED:-false}
+      EXPIRY_CRON_SCHEDULE: ${EXPIRY_CRON_SCHEDULE:-0 2 * * *}
+      EXPIRY_PURGE_FILES:   ${EXPIRY_PURGE_FILES:-false}
     ports:
       - "5001:5001"
     depends_on:
@@ -129,8 +147,35 @@ services:
       [
         "sh",
         "-c",
-        "psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/001_create_users_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/002_expand_user_roles.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/003_create_customers_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/004_migrate_customers_legacy_to_personal.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/005_create_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/006_create_customer_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/007_drop_services_code_check.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/008_unique_customer_email.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/009_approval_workflow.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/010_approval_subject_role_snapshot.sql"
+        "psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/001_create_users_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/002_expand_user_roles.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/003_create_customers_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/004_migrate_customers_legacy_to_personal.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/005_create_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/006_create_customer_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/007_drop_services_code_check.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/008_unique_customer_email.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/009_approval_workflow.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/010_approval_subject_role_snapshot.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/011_document_verification.sql"
       ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # ── Expiry sweep (one-shot, on demand) ──────────────────────
+  # Soft-expires unverified accounts past the 7-day window. The backend also
+  # runs this in-process daily; use this profile to drive it from an external
+  # scheduler instead (set EXPIRY_CRON_DISABLED=true on the backend then):
+  #   docker compose run --rm expire
+  expire:
+    profiles: ["expire"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: velox_expire
+    environment:
+      DB_HOST:     postgres
+      DB_PORT:     5432
+      DB_NAME:     crm_db
+      DB_USER:     postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      S3_BUCKET:   ${S3_BUCKET:-}
+      AWS_REGION:  ${AWS_REGION:-us-east-1}
+      SMTP_HOST:   ${SMTP_HOST:-}
+      EXPIRY_PURGE_FILES: ${EXPIRY_PURGE_FILES:-false}
+    command: ["node", "src/jobs/runExpiry.js"]
     depends_on:
       postgres:
         condition: service_healthy

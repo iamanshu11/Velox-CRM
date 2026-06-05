@@ -4,7 +4,10 @@ import { getClient } from "../../config/db.js";
 import { ALLOWED_ROLES, ROLE_CREATION_MATRIX } from "../config/crmRoles.js";
 import { validatePassword } from "../utils/passwordPolicy.js";
 import { insertUserOnboardingApprovalInTransaction } from "./approvalService.js";
-import { roleRequiresOnboardingApproval } from "../config/approvalRbac.js";
+import {
+  roleRequiresVerification,
+  VERIFICATION_WINDOW_DAYS,
+} from "../config/verificationDocs.js";
 
 /**
  * Creates a new CRM user account with role hierarchy checks.
@@ -47,7 +50,14 @@ export const createUser = async ({ name, email, password, role }, creator) => {
   try {
     await client.query("BEGIN");
 
-    const pendingOnboarding = roleRequiresOnboardingApproval(targetRole);
+    // Per spec: every new account can log in immediately, but verification roles
+    // (employee/agent/affiliate) start as 'pending' with a 7-day window and must
+    // complete document verification before activation. Admins are auto-active.
+    const needsVerification = roleRequiresVerification(targetRole);
+    const accountStatus = needsVerification ? "pending" : "active";
+    const verificationDeadline = needsVerification
+      ? new Date(Date.now() + VERIFICATION_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      : null;
 
     const user = await User.create(
       {
@@ -56,7 +66,9 @@ export const createUser = async ({ name, email, password, role }, creator) => {
         password: hashedPassword,
         role: targetRole,
         createdBy: creator.id,
-        isActive: !pendingOnboarding,
+        isActive: true,
+        accountStatus,
+        verificationDeadline,
       },
       { client }
     );

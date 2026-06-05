@@ -92,6 +92,20 @@ Edge-case behavior (re-open, duplicates, role snapshots, terminal states) is doc
 Apply migration `010_approval_subject_role_snapshot.sql` on existing databases:
 `docker compose run --rm migrate` (includes 010 in the migrate chain).
 
+### Document verification (KYC)
+
+See [`docs/verification.md`](docs/verification.md). After migration `011_document_verification.sql`:
+
+- Employees/agents/affiliates log in immediately but are confined to the **Verification Dashboard**
+  (`/dashboard/verification`) until all required documents are approved and an admin activates them.
+- Super-admins/admins review documents and activate accounts under **Verification** (`/dashboard/verification-review`).
+- Documents go to **S3** when `S3_BUCKET` is set, otherwise local disk (dev). Email uses SMTP when
+  `SMTP_HOST` is set, otherwise logs (dev). See `.env.example` for all storage/SMTP/expiry vars.
+- Unverified accounts are **soft-expired** after 7 days by the in-process daily worker (no hard deletes).
+  Run it externally instead with `docker compose run --rm expire` (+ `EXPIRY_CRON_DISABLED=true`).
+
+Apply migration `011` on an existing DB: `docker compose run --rm migrate`.
+
 ### Velox eSIM integration
 
 See [`docs/velox_esim_integration.md`](docs/velox_esim_integration.md). Set `VELOX_API_URL` (port **5000**) and
