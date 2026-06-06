@@ -63,9 +63,9 @@ const User = {
     const { rows } = await run(
       client,
       `UPDATE users
-          SET account_status = $2,
+          SET account_status = $2::account_status,
               is_active = $3,
-              archived_at = CASE WHEN $2 = 'expired' THEN NOW() ELSE archived_at END,
+              archived_at = CASE WHEN $2::text = 'expired' THEN NOW() ELSE archived_at END,
               updated_at = NOW()
         WHERE id = $1
         RETURNING id, name, email, role, is_active, account_status`,
