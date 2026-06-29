@@ -12,6 +12,8 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import veloxEsimRoutes from "./routes/veloxEsimRoutes.js";
 import formRoutes from "./routes/formRoutes.js";
 import publicFormRoutes from "./routes/publicFormRoutes.js";
+import veloxverseProxy from "./middleware/veloxverseProxy.js";
+import { authenticate, authorizeRoles } from "./middleware/auth.js";
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -76,6 +78,16 @@ app.use("/api/verification", verificationRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/velox-esim", veloxEsimRoutes);
 app.use("/api/forms", formRoutes);
+
+// ── VeloxVerse Admin Proxy ─────────────────────────────────────────
+// Proxies admin API calls to the VeloxVerse backend. Only super_admin
+// and admin roles can access these endpoints.
+app.use(
+  "/api/vv-admin",
+  authenticate,
+  authorizeRoles("super_admin", "admin"),
+  veloxverseProxy
+);
 
 // ── Public routes (no auth, wider CORS for embed) ────────────────
 // Allow any origin for public form endpoints so external websites can embed forms

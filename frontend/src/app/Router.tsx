@@ -22,6 +22,19 @@ import FormAnalyticsPage from '@/features/forms/pages/FormAnalyticsPage'
 import SpamLeadsPage from '@/features/forms/pages/SpamLeadsPage'
 import BlockedDomainsPage from '@/features/forms/pages/BlockedDomainsPage'
 import PublicFormPage from '@/features/forms/pages/PublicFormPage'
+// VeloxVerse Admin
+import VVAnalyticsPage from '@/features/veloxverse-admin/pages/VVAnalyticsPage'
+import VVEsimListPage from '@/features/veloxverse-admin/pages/VVEsimListPage'
+import VVEsimDetailPage from '@/features/veloxverse-admin/pages/VVEsimDetailPage'
+import VVLoungePage from '@/features/veloxverse-admin/pages/VVLoungePage'
+import VVTransfersPage from '@/features/veloxverse-admin/pages/VVTransfersPage'
+import VVPromoCodesPage from '@/features/veloxverse-admin/pages/VVPromoCodesPage'
+import VVPricingPage from '@/features/veloxverse-admin/pages/VVPricingPage'
+import VVUsersListPage from '@/features/veloxverse-admin/pages/VVUsersListPage'
+import VVUserDetailPage from '@/features/veloxverse-admin/pages/VVUserDetailPage'
+import VVSupportListPage from '@/features/veloxverse-admin/pages/VVSupportListPage'
+import VVSupportDetailPage from '@/features/veloxverse-admin/pages/VVSupportDetailPage'
+import VVSettingsPage from '@/features/veloxverse-admin/pages/VVSettingsPage'
 
 const router = createBrowserRouter([
   // ── Public ──────────────────────────────────────────────────────
@@ -63,6 +76,19 @@ const router = createBrowserRouter([
               { path: '/dashboard/forms/leads',                  element: <SpamLeadsPage /> },
               { path: '/dashboard/forms/spam',                   element: <SpamLeadsPage /> },
               { path: '/dashboard/forms/blocked-domains',        element: <BlockedDomainsPage /> },
+              // ── VeloxVerse Admin ────────────────────────────────────
+              { path: '/dashboard/veloxverse/analytics',              element: <VVAnalyticsPage /> },
+              { path: '/dashboard/veloxverse/esim-orders',            element: <VVEsimListPage /> },
+              { path: '/dashboard/veloxverse/esim-orders/:orderNo',   element: <VVEsimDetailPage /> },
+              { path: '/dashboard/veloxverse/lounge',                 element: <VVLoungePage /> },
+              { path: '/dashboard/veloxverse/transfers',              element: <VVTransfersPage /> },
+              { path: '/dashboard/veloxverse/promo-codes',            element: <VVPromoCodesPage /> },
+              { path: '/dashboard/veloxverse/pricing',                element: <VVPricingPage /> },
+              { path: '/dashboard/veloxverse/users',                  element: <VVUsersListPage /> },
+              { path: '/dashboard/veloxverse/users/:id',              element: <VVUserDetailPage /> },
+              { path: '/dashboard/veloxverse/support',                element: <VVSupportListPage /> },
+              { path: '/dashboard/veloxverse/support/:ticketId',      element: <VVSupportDetailPage /> },
+              { path: '/dashboard/veloxverse/settings',               element: <VVSettingsPage /> },
             ],
           },
 
