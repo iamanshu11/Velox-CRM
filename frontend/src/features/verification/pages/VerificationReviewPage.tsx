@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
@@ -20,12 +21,22 @@ const ROLE_FILTERS = [
 ] as const
 
 export default function VerificationReviewPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialStatus = (searchParams.get('status') ?? '') as VerificationStatus | ''
   const [page, setPage] = useState(1)
   const [roles, setRoles] = useState<string[]>([])
-  const [status, setStatus] = useState<VerificationStatus | ''>('')
+  const [status, setStatus] = useState<VerificationStatus | ''>(initialStatus)
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 300)
   const [selectedId, setSelectedId] = useState<number | null>(null)
+
+  // Clear URL param once consumed so bookmarking doesn't lock the filter
+  useEffect(() => {
+    if (searchParams.has('status')) {
+      searchParams.delete('status')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const params = useMemo(
     () => ({
@@ -145,7 +156,12 @@ export default function VerificationReviewPage() {
               items.map((u: VerificationSubject) => (
                 <tr
                   key={u.id}
-                  className="cursor-pointer border-t border-gray-100 hover:bg-gray-50/80"
+                  className={
+                    'cursor-pointer border-t border-gray-100 hover:bg-gray-50/80' +
+                    (u.verification_status === 'pending' || u.verification_status === 'under_review'
+                      ? ' border-l-4 border-l-amber-400'
+                      : '')
+                  }
                   onClick={() => setSelectedId(u.id)}
                 >
                   <td className="px-4 py-3">
@@ -156,9 +172,16 @@ export default function VerificationReviewPage() {
                     {u.role.replace(/_/g, ' ')}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={u.can_activate ? 'success' : 'neutral'}>
-                      {u.docs_approved}/{u.required_total} approved
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={u.can_activate ? 'success' : 'neutral'}>
+                        {u.docs_approved}/{u.required_total} approved
+                      </Badge>
+                      {u.docs_uploaded > (u.total_expected ?? u.required_total) && (
+                        <Badge variant="warning">
+                          +{u.docs_uploaded - (u.total_expected ?? u.required_total)} additional
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <VerificationStatusBadge status={u.verification_status} />

@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Spinner from '@/components/ui/Spinner'
 import { formatDateTime } from '@/lib/utils'
-import { docLabel } from '@/config/verificationDocs'
+import { docLabel, isCustomDocType } from '@/config/verificationDocs'
 import { DocStatusBadge, VerificationStatusBadge } from '../statusBadge'
 import { verificationApi } from '../verificationService'
 import {
@@ -39,7 +39,7 @@ export default function ReviewUserModal({ userId, onClose }: Props) {
       onClose={() => !busy && onClose()}
       title={detail ? detail.user.name : 'Verification'}
       description={detail ? `${detail.user.email} · ${detail.user.role.replace(/_/g, ' ')}` : undefined}
-      size="lg"
+      size="xl"
       footer={
         detail ? (
           <>
@@ -56,12 +56,8 @@ export default function ReviewUserModal({ userId, onClose }: Props) {
             </Button>
             <Button
               loading={activate.isPending}
-              disabled={busy || !detail.progress.can_activate || detail.user.account_status === 'active'}
-              title={
-                detail.progress.can_activate
-                  ? 'Activate account'
-                  : 'All required documents must be approved first'
-              }
+              disabled={busy || detail.user.account_status === 'active'}
+              title="Activate account"
               onClick={() => activate.mutate()}
             >
               <CheckCircle2 size={15} /> Activate account
@@ -84,17 +80,33 @@ export default function ReviewUserModal({ userId, onClose }: Props) {
                 <VerificationStatusBadge status={detail.progress.overall_status} />
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-semibold text-gray-900">
-                {detail.progress.required_approved}/{detail.progress.required_total}
-              </p>
-              <p className="text-xs text-gray-500">required approved</p>
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <p className="text-lg font-semibold text-gray-900">
+                  {detail.progress.uploaded}/{detail.progress.total_docs || detail.progress.required_total}
+                </p>
+                <p className="text-xs text-gray-500">total uploaded</p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-semibold text-gray-900">
+                  {detail.progress.required_approved}/{detail.progress.required_total}
+                </p>
+                <p className="text-xs text-gray-500">required approved</p>
+              </div>
+              {(detail.progress.custom_count ?? 0) > 0 && (
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-amber-600">
+                    {detail.progress.custom_count}
+                  </p>
+                  <p className="text-xs text-gray-500">additional</p>
+                </div>
+              )}
             </div>
           </div>
 
           {!detail.progress.can_activate && (
             <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-              The Activate button unlocks once every required document is approved.
+              Not all required documents are approved yet, but you can still activate the account at your discretion.
             </p>
           )}
 
@@ -106,10 +118,25 @@ export default function ReviewUserModal({ userId, onClose }: Props) {
                 <p className="text-gray-500">No documents uploaded yet.</p>
               )}
               {detail.documents.map((d) => (
-                <div key={d.id} className="rounded-lg border border-gray-200 p-3">
+                <div
+                  key={d.id}
+                  className={
+                    'rounded-lg border p-3 ' +
+                    (isCustomDocType(d.doc_type)
+                      ? 'border-amber-300 bg-amber-50/30'
+                      : 'border-gray-200')
+                  }
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-gray-900">{docLabel(d.doc_type)}</p>
+                      <p className="font-medium text-gray-900">
+                        {docLabel(d.doc_type, d.custom_label)}
+                        {isCustomDocType(d.doc_type) && (
+                          <span className="ml-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                            Additional
+                          </span>
+                        )}
+                      </p>
                       <p className="truncate text-xs text-gray-400">{d.original_file_name}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -204,7 +231,7 @@ export default function ReviewUserModal({ userId, onClose }: Props) {
                 >
                   <span className="font-medium">{a.actor_name}</span>{' '}
                   <span className="text-gray-500">
-                    {docLabel(a.doc_type)}: {a.from_status ? `${a.from_status} → ` : ''}
+                    {docLabel(a.doc_type, a.custom_label)}: {a.from_status ? `${a.from_status} → ` : ''}
                     {a.to_status}
                   </span>
                   <span className="ml-2 text-gray-400">{formatDateTime(a.created_at)}</span>

@@ -10,13 +10,14 @@ interface ModalProps {
   description?: string
   children: ReactNode
   footer?: ReactNode
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
 const sizeClasses = {
   sm: 'max-w-sm',
   md: 'max-w-md',
   lg: 'max-w-lg',
+  xl: 'max-w-2xl',
 }
 
 export default function Modal({
@@ -83,12 +84,13 @@ export default function Modal({
         <div
           className={cn(
             'relative w-full bg-white rounded-2xl shadow-xl z-10',
+            'flex flex-col max-h-[calc(100vh-2rem)]',
             'animate-in fade-in zoom-in-95 duration-200',
             sizeClasses[size]
           )}
         >
           {/* Header */}
-          <div className="flex items-start justify-between p-6 border-b border-gray-100">
+          <div className="flex items-start justify-between p-6 border-b border-gray-100 shrink-0">
             <div>
               <h2 id={titleId} className="text-base font-semibold text-gray-900">
                 {title}
@@ -110,11 +112,11 @@ export default function Modal({
           </div>
 
           {/* Body */}
-          <div className="p-6">{children}</div>
+          <div className="p-6 flex-1 min-h-0 overflow-y-auto">{children}</div>
 
           {/* Footer */}
           {footer && (
-            <div className="px-6 pb-6 pt-0 flex items-center justify-end gap-3">
+            <div className="px-6 py-4 border-t border-gray-100 shrink-0 flex flex-wrap items-center justify-end gap-3">
               {footer}
             </div>
           )}

@@ -13,6 +13,7 @@ import {
   handleSuspend,
   handleRejectVerification,
   handleDownloadDocument,
+  handleGetPendingVerificationCount,
 } from "../controllers/verificationController.js";
 
 const router = Router();
@@ -33,6 +34,7 @@ router.get("/documents/:id/file", handleDownloadDocument);
 // ── Moderator review portal (super_admin / admin) ────────────────────────────
 const moderators = authorizeRoles("super_admin", "admin");
 
+router.get("/review/pending-count", moderators, handleGetPendingVerificationCount);
 router.get("/review", moderators, handleListForReview);
 router.get("/review/:userId", moderators, handleGetUserDetail);
 router.patch("/documents/:id/status", moderators, handleReviewDocument);

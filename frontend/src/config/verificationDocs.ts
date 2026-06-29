@@ -70,6 +70,13 @@ export function getRoleDocumentSpec(role: UserRole | undefined): RoleDocSpec {
   return (role && ROLE_REQUIRED_DOCUMENTS[role]) || { required: [], optional: [] }
 }
 
-export function docLabel(docType: string): string {
+export const CUSTOM_DOC_PREFIX = 'custom_'
+
+export function isCustomDocType(docType: string): boolean {
+  return docType.startsWith(CUSTOM_DOC_PREFIX)
+}
+
+export function docLabel(docType: string, customLabel?: string | null): string {
+  if (customLabel) return customLabel
   return DOC_LABELS[docType] ?? docType
 }

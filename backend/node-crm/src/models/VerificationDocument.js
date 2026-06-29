@@ -12,6 +12,7 @@ const docSelect = `
   d.id, d.user_id, d.doc_type, d.approval_request_id,
   d.file_name, d.original_file_name, d.storage_path, d.file_url,
   d.mime_type, d.file_size, d.uploaded_at, d.archived_at,
+  d.custom_label,
   r.status        AS status,
   r.decision_note AS review_note,
   r.decided_by_id AS reviewed_by,
@@ -32,16 +33,18 @@ const VerificationDocument = {
       fileUrl,
       mimeType,
       fileSize,
+      customLabel,
     }
   ) => {
     const { rows } = await run(
       client,
       `INSERT INTO verification_documents
          (user_id, doc_type, approval_request_id, file_name, original_file_name,
-          storage_path, file_url, mime_type, file_size)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          storage_path, file_url, mime_type, file_size, custom_label)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING id, user_id, doc_type, approval_request_id, file_name,
-         original_file_name, storage_path, file_url, mime_type, file_size, uploaded_at`,
+         original_file_name, storage_path, file_url, mime_type, file_size,
+         custom_label, uploaded_at`,
       [
         userId,
         docType,
@@ -52,6 +55,7 @@ const VerificationDocument = {
         fileUrl,
         mimeType,
         fileSize,
+        customLabel || null,
       ]
     );
     return rows[0];

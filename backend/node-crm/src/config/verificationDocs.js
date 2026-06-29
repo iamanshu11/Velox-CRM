@@ -114,13 +114,27 @@ export function getAllowedDocTypes(role) {
   return [...spec.required, ...spec.optional];
 }
 
+/** Custom doc types are prefixed with "custom_". */
+export const CUSTOM_DOC_PREFIX = "custom_";
+
+/**
+ * @param {string | undefined} docType
+ * @returns {boolean}
+ */
+export function isCustomDocType(docType) {
+  return typeof docType === "string" && docType.startsWith(CUSTOM_DOC_PREFIX);
+}
+
 /**
  * @param {string | undefined} role
  * @param {string | undefined} docType
  * @returns {boolean}
  */
 export function isDocTypeAllowedForRole(role, docType) {
-  return typeof docType === "string" && getAllowedDocTypes(role).includes(docType);
+  if (typeof docType !== "string") return false;
+  // Custom (additional) documents are allowed for any verification role.
+  if (isCustomDocType(docType) && roleRequiresVerification(role)) return true;
+  return getAllowedDocTypes(role).includes(docType);
 }
 
 /** Human label for a doc type, falling back to the raw key. */

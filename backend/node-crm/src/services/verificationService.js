@@ -7,7 +7,9 @@ import { storage, MIME_EXTENSION } from "../storage/index.js";
 import {
   getRoleDocumentSpec,
   isDocTypeAllowedForRole,
+  isCustomDocType,
   docLabel,
+  CUSTOM_DOC_PREFIX,
 } from "../config/verificationDocs.js";
 import {
   canModerateDocumentVerification,
@@ -78,6 +80,21 @@ export const computeProgress = (role, liveDocs, accountStatus) => {
     };
   });
 
+  // Append any custom (additional) documents the user uploaded.
+  const knownTypes = new Set([...required, ...optional]);
+  for (const d of liveDocs) {
+    if (isCustomDocType(d.doc_type) && !knownTypes.has(d.doc_type)) {
+      docTable.push({
+        doc_type: d.doc_type,
+        label: d.custom_label || d.doc_type,
+        required: false,
+        status: d.status,
+        review_note: d.review_note ?? null,
+        document_id: d.id ?? null,
+      });
+    }
+  }
+
   // Derived overall status.
   let overall;
   if (accountStatus === "active") overall = "activated";
@@ -88,12 +105,19 @@ export const computeProgress = (role, liveDocs, accountStatus) => {
   else if (liveDocs.some((d) => d.status === "in_review")) overall = "under_review";
   else overall = "pending";
 
+  const totalDocs = docTable.length;          // required + optional + custom
+  const customCount = docTable.filter(
+    (d) => d.doc_type && d.doc_type.startsWith("custom_")
+  ).length;
+
   return {
     role,
     uploaded,
+    total_docs: totalDocs,
+    custom_count: customCount,
     required_total: requiredTotal,
     required_approved: approvedRequired,
-    documents_uploaded_label: `${uploaded}/${requiredTotal + optional.length}`,
+    documents_uploaded_label: `${uploaded}/${totalDocs}`,
     can_activate: allRequiredApproved,
     overall_status: overall,
     documents: docTable,
@@ -106,14 +130,21 @@ export const computeProgress = (role, liveDocs, accountStatus) => {
  * Upload (or re-upload) a verification document for the acting user.
  * Re-uploading a type archives the prior live row and opens a fresh review.
  */
-export const uploadDocument = async (actor, { docType, file }, req) => {
+export const uploadDocument = async (actor, { docType, file, customLabel }, req) => {
   if (!file) throw { status: 400, message: "A file is required" };
+
+  // Custom documents require a label.
+  if (isCustomDocType(docType) && !(customLabel && customLabel.trim())) {
+    throw { status: 400, message: "A label is required for custom documents" };
+  }
   if (!isDocTypeAllowedForRole(actor.role, docType)) {
     throw {
       status: 400,
       message: `'${docType}' is not a valid document for role '${actor.role}'`,
     };
   }
+
+  const resolvedLabel = isCustomDocType(docType) ? customLabel.trim().slice(0, 100) : null;
 
   const ext = MIME_EXTENSION[file.mimetype] || "bin";
   const key = `user-${actor.id}/${docType}-${randomUUID()}.${ext}`;
@@ -138,10 +169,11 @@ export const uploadDocument = async (actor, { docType, file }, req) => {
     }
 
     // One approval_request drives this document's review lifecycle.
+    const displayLabel = resolvedLabel || docLabel(docType);
     const request = await ApprovalRequest.insert(client, {
       kind: "document_verification",
-      title: `${docLabel(docType)} — ${actor.name}`,
-      body: { doc_type: docType, subject_user_id: actor.id },
+      title: `${displayLabel} — ${actor.name}`,
+      body: { doc_type: docType, subject_user_id: actor.id, custom_label: resolvedLabel },
       requesterId: actor.id,
       subjectUserId: actor.id,
       assignedToId: null,
@@ -167,6 +199,7 @@ export const uploadDocument = async (actor, { docType, file }, req) => {
       fileUrl,
       mimeType: file.mimetype,
       fileSize: file.size,
+      customLabel: resolvedLabel,
     });
 
     await client.query("COMMIT");
@@ -175,7 +208,7 @@ export const uploadDocument = async (actor, { docType, file }, req) => {
     await notify({
       recipient: actor,
       event: "document_uploaded",
-      title: `Document received: ${docLabel(docType)}`,
+      title: `Document received: ${displayLabel}`,
       body: "Your document was uploaded and is awaiting review.",
       metadata: { doc_type: docType, document_id: doc.id },
       email: false,
@@ -187,7 +220,7 @@ export const uploadDocument = async (actor, { docType, file }, req) => {
           recipient: m,
           event: "document_uploaded",
           title: `New document to review: ${actor.name}`,
-          body: `${actor.name} (${actor.role}) uploaded ${docLabel(docType)}.`,
+          body: `${actor.name} (${actor.role}) uploaded ${displayLabel}.`,
           metadata: { subject_user_id: actor.id, doc_type: docType, document_id: doc.id },
           email: false,
         })
@@ -275,11 +308,12 @@ export const reviewDocument = async (actor, documentId, { toStatus, note }, req)
 
     // Notify the document owner.
     const owner = await User.findById(doc.user_id);
+    const reviewLabel = doc.custom_label || docLabel(doc.doc_type);
     if (toStatus === "approved") {
       await notify({
         recipient: owner,
         event: "document_approved",
-        title: `Document approved: ${docLabel(doc.doc_type)}`,
+        title: `Document approved: ${reviewLabel}`,
         body: "One of your verification documents was approved.",
         metadata: { doc_type: doc.doc_type, document_id: doc.id },
       });
@@ -287,14 +321,14 @@ export const reviewDocument = async (actor, documentId, { toStatus, note }, req)
       await notify({
         recipient: owner,
         event: "document_rejected",
-        title: `Document rejected: ${docLabel(doc.doc_type)}`,
+        title: `Document rejected: ${reviewLabel}`,
         body: `Reason: ${note}. Please re-upload a corrected document.`,
         metadata: { doc_type: doc.doc_type, document_id: doc.id, reason: note },
       });
       await notify({
         recipient: owner,
         event: "reupload_required",
-        title: `Re-upload required: ${docLabel(doc.doc_type)}`,
+        title: `Re-upload required: ${reviewLabel}`,
         body: "Please upload a corrected version of this document.",
         metadata: { doc_type: doc.doc_type },
         email: false,
@@ -346,6 +380,7 @@ export const listForReview = async (actor, opts) => {
     else if (Number(u.docs_in_review) > 0) overall = "under_review";
     else overall = "pending";
 
+    const docsUploaded = Number(u.docs_uploaded) || 0;
     return {
       id: u.id,
       name: u.name,
@@ -354,9 +389,10 @@ export const listForReview = async (actor, opts) => {
       account_status: u.account_status,
       verification_deadline: u.verification_deadline,
       created_at: u.created_at,
-      docs_uploaded: Number(u.docs_uploaded) || 0,
+      docs_uploaded: docsUploaded,
       docs_approved: docsApproved,
       required_total: requiredTotal,
+      total_expected: requiredTotal + spec.optional.length,
       can_activate: requiredTotal > 0 && docsApproved >= requiredTotal,
       verification_status: overall,
     };
@@ -387,7 +423,7 @@ export const getUserVerificationDetail = async (actor, userId) => {
   for (const d of docs) {
     const actions = await ApprovalRequest.findActionsByRequestId(d.approval_request_id);
     for (const a of actions) {
-      timeline.push({ ...a, doc_type: d.doc_type, document_id: d.id });
+      timeline.push({ ...a, doc_type: d.doc_type, document_id: d.id, custom_label: d.custom_label || null });
     }
   }
   timeline.sort((x, y) => new Date(x.created_at) - new Date(y.created_at));
@@ -444,8 +480,8 @@ const advanceOnboarding = async (client, userId, actor, toStatus, note, meta) =>
 };
 
 /**
- * Activate a user account. Server-enforces that every required document is
- * approved before flipping the account to active.
+ * Activate a user account. Super-admins and admins may activate at their
+ * discretion — document approval status does NOT gate activation.
  */
 export const activateAccount = async (actor, userId, req) => {
   const user = await User.findById(userId);
@@ -461,12 +497,6 @@ export const activateAccount = async (actor, userId, req) => {
   const client = await getClient();
   try {
     await client.query("BEGIN");
-    if (!(await allRequiredApproved(user, client))) {
-      throw {
-        status: 409,
-        message: "All required documents must be approved before activation",
-      };
-    }
     await User.setAccountStatus(userId, "active", { client });
     await advanceOnboarding(client, userId, actor, "approved", "Account activated", meta);
     await client.query("COMMIT");
@@ -552,6 +582,25 @@ export const rejectVerification = async (actor, userId, { note } = {}, req) => {
  * Resolve a document for download. Owner or moderator only.
  * Returns either a signed URL (S3) or a buffer (local) for the controller.
  */
+/**
+ * Count users whose verification status is pending/under_review (needs moderator attention).
+ */
+export const getPendingVerificationCount = async (actor) => {
+  if (!canViewApprovalQueues(actor.role)) return 0;
+
+  const subjects = await User.findVerificationSubjects({});
+  let count = 0;
+  for (const u of subjects) {
+    if (u.account_status === "active" || u.account_status === "expired" || u.account_status === "suspended") continue;
+    const docsApproved = Number(u.docs_approved) || 0;
+    const spec = getRoleDocumentSpec(u.role);
+    const requiredTotal = spec.required.length;
+    const allApproved = requiredTotal > 0 && docsApproved >= requiredTotal;
+    if (!allApproved) count++;
+  }
+  return count;
+};
+
 export const getDocumentForDownload = async (actor, documentId) => {
   const doc = await VerificationDocument.findById(documentId);
   if (!doc) throw { status: 404, message: "Document not found" };

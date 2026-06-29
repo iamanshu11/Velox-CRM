@@ -11,6 +11,7 @@ import {
   suspendAccount,
   rejectVerification,
   getDocumentForDownload,
+  getPendingVerificationCount,
 } from "../services/verificationService.js";
 import { getRoleDocumentSpec } from "../config/verificationDocs.js";
 import { sendSuccess, sendError } from "../utils/response.js";
@@ -38,7 +39,8 @@ export const handleGetMeta = (req, res) => {
 export const handleUploadDocument = async (req, res) => {
   try {
     const docType = (req.body?.doc_type || req.body?.docType || "").trim();
-    const created = await uploadDocument(req.user, { docType, file: req.file }, req);
+    const customLabel = (req.body?.custom_label || req.body?.customLabel || "").trim() || null;
+    const created = await uploadDocument(req.user, { docType, file: req.file, customLabel }, req);
     return sendSuccess(res, created, "Document uploaded", 201);
   } catch (err) {
     return sendError(res, err.message, err.status || 500);
@@ -133,6 +135,15 @@ export const handleRejectVerification = async (req, res) => {
     if (!Number.isFinite(userId)) return sendError(res, "Invalid user id", 400);
     const updated = await rejectVerification(req.user, userId, { note: req.body?.note }, req);
     return sendSuccess(res, updated, "Verification rejected");
+  } catch (err) {
+    return sendError(res, err.message, err.status || 500);
+  }
+};
+
+export const handleGetPendingVerificationCount = async (req, res) => {
+  try {
+    const count = await getPendingVerificationCount(req.user);
+    return sendSuccess(res, { count }, "Pending verification count");
   } catch (err) {
     return sendError(res, err.message, err.status || 500);
   }

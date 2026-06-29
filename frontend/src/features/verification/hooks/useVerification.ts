@@ -11,6 +11,17 @@ import type { DocumentStatus } from '@/types'
 const errMessage = (err: unknown, fallback: string) =>
   (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
 
+// ── Pending count for header badge ─────────────────────────────────
+export function usePendingVerificationCount(enabled = true) {
+  return useQuery({
+    queryKey: ['verification', 'pending-count'],
+    queryFn: () => verificationApi.getPendingVerificationCount(),
+    enabled,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  })
+}
+
 // ── Acting user ────────────────────────────────────────────────────
 export function useVerificationMeta() {
   return useQuery({
@@ -40,10 +51,11 @@ export function useUploadDocument(onSuccess?: () => void) {
   const qc = useQueryClient()
   const { showToast } = useToast()
   return useMutation({
-    mutationFn: ({ docType, file }: { docType: string; file: File }) =>
-      verificationApi.upload(docType, file),
+    mutationFn: ({ docType, file, customLabel }: { docType: string; file: File; customLabel?: string }) =>
+      verificationApi.upload(docType, file, customLabel),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['verification', 'my-progress'] })
+      qc.invalidateQueries({ queryKey: ['verification', 'my-documents'] })
       qc.invalidateQueries({ queryKey: ['notifications'] })
       showToast({ type: 'success', title: 'Uploaded', message: 'Document submitted for review.' })
       onSuccess?.()

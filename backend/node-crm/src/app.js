@@ -10,6 +10,8 @@ import approvalRoutes from "./routes/approvalRoutes.js";
 import verificationRoutes from "./routes/verificationRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import veloxEsimRoutes from "./routes/veloxEsimRoutes.js";
+import formRoutes from "./routes/formRoutes.js";
+import publicFormRoutes from "./routes/publicFormRoutes.js";
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -73,6 +75,24 @@ app.use("/api/approvals", approvalRoutes);
 app.use("/api/verification", verificationRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/velox-esim", veloxEsimRoutes);
+app.use("/api/forms", formRoutes);
+
+// ── Public routes (no auth, wider CORS for embed) ────────────────
+// Allow any origin for public form endpoints so external websites can embed forms
+app.use("/public", (req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  next();
+}, publicFormRoutes);
+app.get("/form.js", (req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  next();
+}, (req, res, next) => {
+  // delegate to the public router handler
+  req.url = "/form.js";
+  publicFormRoutes(req, res, next);
+});
 
 // ── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

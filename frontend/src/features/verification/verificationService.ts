@@ -36,10 +36,11 @@ export const verificationApi = {
     return res.data.data
   },
 
-  upload: async (docType: string, file: File): Promise<VerificationDocument> => {
+  upload: async (docType: string, file: File, customLabel?: string): Promise<VerificationDocument> => {
     const form = new FormData()
     form.append('doc_type', docType)
     form.append('file', file)
+    if (customLabel) form.append('custom_label', customLabel)
     const res = await api.post<ApiResponse<VerificationDocument>>(
       '/verification/documents',
       form,
@@ -53,6 +54,11 @@ export const verificationApi = {
     `${api.defaults.baseURL}/verification/documents/${documentId}/file`,
 
   // ── Moderator ──────────────────────────────────────────────────
+  getPendingVerificationCount: async (): Promise<number> => {
+    const res = await api.get<ApiResponse<{ count: number }>>('/verification/review/pending-count')
+    return res.data.data.count
+  },
+
   listForReview: async (params: ListReviewParams = {}): Promise<Paginated<VerificationSubject>> => {
     const res = await api.get<ApiResponse<Paginated<VerificationSubject>>>('/verification/review', {
       params,

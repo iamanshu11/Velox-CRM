@@ -14,6 +14,14 @@ import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
 import VerificationDashboardPage from '@/features/verification/pages/VerificationDashboardPage'
 import VerificationReviewPage from '@/features/verification/pages/VerificationReviewPage'
 import DashboardRedirect from './DashboardRedirect'
+// Form Builder
+import FormsListPage from '@/features/forms/pages/FormsListPage'
+import FormBuilderPage from '@/features/forms/pages/FormBuilderPage'
+import FormSubmissionsPage from '@/features/forms/pages/FormSubmissionsPage'
+import FormAnalyticsPage from '@/features/forms/pages/FormAnalyticsPage'
+import SpamLeadsPage from '@/features/forms/pages/SpamLeadsPage'
+import BlockedDomainsPage from '@/features/forms/pages/BlockedDomainsPage'
+import PublicFormPage from '@/features/forms/pages/PublicFormPage'
 
 const router = createBrowserRouter([
   // ── Public ──────────────────────────────────────────────────────
@@ -21,6 +29,9 @@ const router = createBrowserRouter([
     element: <AuthLayout />,
     children: [{ path: '/login', element: <LoginPage /> }],
   },
+
+  // ── Public embed form (no auth, no layout) ───────────────────────
+  { path: '/embed/:id', element: <PublicFormPage /> },
 
   // ── Authenticated ────────────────────────────────────────────────
   {
@@ -41,9 +52,17 @@ const router = createBrowserRouter([
           {
             element: <RoleGuard allowedRoles={['super_admin', 'admin']} />,
             children: [
-              { path: '/dashboard/admin', element: <SuperAdminDashboard /> },
-              { path: '/dashboard/settings', element: <SettingsPage /> },
+              { path: '/dashboard/admin',               element: <SuperAdminDashboard /> },
+              { path: '/dashboard/settings',            element: <SettingsPage /> },
               { path: '/dashboard/verification-review', element: <VerificationReviewPage /> },
+              // ── Form Builder ──────────────────────────────────────
+              { path: '/dashboard/forms',                        element: <FormsListPage /> },
+              { path: '/dashboard/forms/builder/:id',            element: <FormBuilderPage /> },
+              { path: '/dashboard/forms/submissions/:id',        element: <FormSubmissionsPage /> },
+              { path: '/dashboard/forms/analytics/:id',          element: <FormAnalyticsPage /> },
+              { path: '/dashboard/forms/leads',                  element: <SpamLeadsPage /> },
+              { path: '/dashboard/forms/spam',                   element: <SpamLeadsPage /> },
+              { path: '/dashboard/forms/blocked-domains',        element: <BlockedDomainsPage /> },
             ],
           },
 

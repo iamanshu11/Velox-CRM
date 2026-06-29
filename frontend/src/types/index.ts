@@ -243,6 +243,7 @@ export interface VerificationDocument {
   file_size: number
   uploaded_at: string
   archived_at: string | null
+  custom_label: string | null
   status: DocumentStatus
   review_note: string | null
   reviewed_by: number | null
@@ -257,11 +258,14 @@ export interface VerificationDocRow {
   status: DocumentStatus | 'not_uploaded'
   review_note: string | null
   document_id: number | null
+  custom_label?: string | null
 }
 
 export interface VerificationProgress {
   role: UserRole
   uploaded: number
+  total_docs: number
+  custom_count: number
   required_total: number
   required_approved: number
   documents_uploaded_label: string
@@ -281,6 +285,7 @@ export interface VerificationSubject {
   docs_uploaded: number
   docs_approved: number
   required_total: number
+  total_expected: number
   can_activate: boolean
   verification_status: VerificationStatus
 }
@@ -300,6 +305,7 @@ export interface VerificationTimelineEntry {
   actor_email: string
   doc_type: string
   document_id: number
+  custom_label?: string | null
 }
 
 export interface VerificationDetail {

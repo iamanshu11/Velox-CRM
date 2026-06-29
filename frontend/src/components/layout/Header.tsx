@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, ChevronDown, Bell, BellRing, ClipboardList, PanelLeftClose, PanelLeftOpen, Menu } from 'lucide-react'
+import { LogOut, ChevronDown, Bell, BellRing, ClipboardList, ShieldCheck, PanelLeftClose, PanelLeftOpen, Menu } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { authService } from '@/features/auth/authService'
 import { canViewApprovalQueues } from '@/config/roles'
 import { usePendingApprovalsCount } from '@/features/approvals/hooks/useApprovals'
+import { usePendingVerificationCount } from '@/features/verification/hooks/useVerification'
 import {
   useNotifications,
   useUnreadCount,
@@ -32,6 +33,7 @@ export default function Header({
   const [notifOpen, setNotifOpen] = useState(false)
   const isModerator = canViewApprovalQueues(user?.role)
   const { data: pendingCount = 0 } = usePendingApprovalsCount(isModerator)
+  const { data: pendingVerifCount = 0 } = usePendingVerificationCount(isModerator)
   const { data: unreadCount = 0 } = useUnreadCount(!!user)
   const { data: notifications = [] } = useNotifications(notifOpen)
   const markRead = useMarkNotificationRead()
@@ -139,6 +141,31 @@ export default function Header({
             </>
           )}
         </div>
+
+        {isModerator && (
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/verification-review?status=pending')}
+            aria-label={
+              pendingVerifCount > 0
+                ? `${pendingVerifCount} verification${pendingVerifCount === 1 ? '' : 's'} pending`
+                : 'Verification'
+            }
+            title={
+              pendingVerifCount > 0
+                ? `${pendingVerifCount} verification${pendingVerifCount === 1 ? '' : 's'} pending`
+                : 'Verification'
+            }
+            className="relative p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <ShieldCheck size={18} />
+            {pendingVerifCount > 0 && (
+              <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white leading-none">
+                {pendingVerifCount > 99 ? '99+' : pendingVerifCount}
+              </span>
+            )}
+          </button>
+        )}
 
         {isModerator && (
           <button

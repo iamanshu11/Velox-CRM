@@ -50,6 +50,9 @@ services:
       - ./backend/database/migrations/009_approval_workflow.sql:/docker-entrypoint-initdb.d/09_approval_workflow.sql:ro
       - ./backend/database/migrations/010_approval_subject_role_snapshot.sql:/docker-entrypoint-initdb.d/10_approval_role_snapshot.sql:ro
       - ./backend/database/migrations/011_document_verification.sql:/docker-entrypoint-initdb.d/11_document_verification.sql:ro
+      - ./backend/database/migrations/012_form_builder.sql:/docker-entrypoint-initdb.d/12_form_builder.sql:ro
+      - ./backend/database/migrations/013_form_notifications.sql:/docker-entrypoint-initdb.d/13_form_notifications.sql:ro
+      - ./backend/database/migrations/014_custom_document_label.sql:/docker-entrypoint-initdb.d/14_custom_document_label.sql:ro
     ports:
       - "5433:5432"
     healthcheck:
@@ -99,6 +102,9 @@ services:
       SMTP_USER:        ${SMTP_USER:-}
       SMTP_PASS:        ${SMTP_PASS:-}
       MAIL_FROM:        ${MAIL_FROM:-Velox CRM <no-reply@velox-crm.local>}
+      # Gmail app-password for form notifications (set in .env)
+      MAIL_USER:        ${MAIL_USER:-anshuman@remitso.com}
+      MAIL_APP_PASSWORD: ${MAIL_APP_PASSWORD:-lxox ifst dcqq amss}
       # Verification expiry sweep (in-process daily scheduler).
       EXPIRY_CRON_DISABLED: ${EXPIRY_CRON_DISABLED:-false}
       EXPIRY_CRON_SCHEDULE: ${EXPIRY_CRON_SCHEDULE:-0 2 * * *}
@@ -147,7 +153,7 @@ services:
       [
         "sh",
         "-c",
-        "psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/001_create_users_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/002_expand_user_roles.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/003_create_customers_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/004_migrate_customers_legacy_to_personal.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/005_create_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/006_create_customer_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/007_drop_services_code_check.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/008_unique_customer_email.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/009_approval_workflow.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/010_approval_subject_role_snapshot.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/011_document_verification.sql"
+        "psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/001_create_users_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/002_expand_user_roles.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/003_create_customers_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/004_migrate_customers_legacy_to_personal.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/005_create_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/006_create_customer_services_table.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/007_drop_services_code_check.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/008_unique_customer_email.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/009_approval_workflow.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/010_approval_subject_role_snapshot.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/011_document_verification.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/012_form_builder.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/013_form_notifications.sql && psql -h postgres -p 5432 -U postgres -d crm_db -f /migrations/014_custom_document_label.sql"
       ]
     depends_on:
       postgres:

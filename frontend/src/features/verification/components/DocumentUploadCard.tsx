@@ -37,7 +37,7 @@ export default function DocumentUploadCard({ row }: Props) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-gray-900 truncate">
-            {docLabel(row.doc_type)}
+            {row.label || docLabel(row.doc_type)}
             {!row.required && (
               <span className="ml-1.5 text-xs font-normal text-gray-400">(optional)</span>
             )}

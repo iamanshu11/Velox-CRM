@@ -4,8 +4,8 @@
 # ─────────────────────────────────────────────────────────────
 FROM node:20-alpine
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init + wget for downloading the disposable email blocklist
+RUN apk add --no-cache dumb-init wget
 
 WORKDIR /app
 
@@ -18,6 +18,16 @@ RUN npm ci --omit=dev
 
 # Copy the Express application source
 COPY node-crm/ .
+
+# Download the authoritative disposable-email blocklist from GitHub.
+# Saved to /app/data/ so spamService.js can load it at startup.
+# If the download fails (no internet during build), the file simply won't
+# exist and spamService falls back to the npm package list.
+RUN mkdir -p /app/data && \
+    wget -q -O /app/data/disposable_email_blocklist.conf \
+      "https://raw.githubusercontent.com/disposable-email-domains/disposable-email-domains/main/disposable_email_blocklist.conf" \
+    && echo "Downloaded $(wc -l < /app/data/disposable_email_blocklist.conf) domains from GitHub blocklist" \
+    || echo "WARNING: Could not download blocklist — falling back to npm package list"
 
 # Copy database folder (migrations + seeds) so the seed script
 # can be run inside the container:
