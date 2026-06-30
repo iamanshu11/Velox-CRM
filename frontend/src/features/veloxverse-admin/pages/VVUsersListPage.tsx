@@ -31,7 +31,7 @@ export default function VVUsersListPage() {
           to={`/dashboard/veloxverse/users/${row.id}`}
           className="font-medium text-gray-900 hover:text-indigo-600"
         >
-          {row.fullName}
+          {row.fullName || row.email}
         </Link>
       ),
     },
@@ -46,7 +46,9 @@ export default function VVUsersListPage() {
       key: 'role',
       header: 'Role',
       render: (row: VVAdminUser) => (
-        <span className="text-gray-500">{row.role}</span>
+        <Badge variant={row.role === 'GUEST' ? 'warning' : 'neutral'}>
+          {row.role}
+        </Badge>
       ),
     },
     {

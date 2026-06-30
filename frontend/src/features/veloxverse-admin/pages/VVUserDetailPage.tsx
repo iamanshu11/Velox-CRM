@@ -13,7 +13,7 @@ import {
 import { formatUsd, formatDate, statusBadgeVariant } from '../utils'
 import type { VVUserRole } from '../types'
 
-const ROLES: VVUserRole[] = ['USER', 'ADMIN', 'SUPER_ADMIN']
+const ROLES: VVUserRole[] = ['GUEST', 'USER', 'ADMIN', 'SUPER_ADMIN']
 
 export default function VVUserDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -85,7 +85,7 @@ export default function VVUserDetailPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  {data.user.fullName}
+                  {data.user.fullName || 'Guest User'}
                 </h1>
                 <p className="flex items-center gap-1.5 text-sm text-gray-500">
                   <Mail className="h-3.5 w-3.5" /> {data.user.email}
@@ -94,6 +94,11 @@ export default function VVUserDetailPage() {
                   Joined {formatDate(data.user.createdAt)} ·{' '}
                   {data.user.isVerified ? 'Verified' : 'Unverified'}
                 </p>
+                {data.user.role === 'GUEST' && data.user.guestExpiresAt && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    Guest expires {formatDate(data.user.guestExpiresAt)}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2">

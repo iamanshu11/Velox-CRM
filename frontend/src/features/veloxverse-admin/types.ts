@@ -255,18 +255,19 @@ export interface PricingAuditEntry {
 }
 
 // ── Users ───────────────────────────────────────────────────────────
-export type VVUserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER'
+export type VVUserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER' | 'GUEST'
 
 export interface VVAdminUser {
   id: string
-  firstName: string
-  lastName: string
-  fullName: string
+  firstName: string | null
+  lastName: string | null
+  fullName: string | null
   email: string
   role: VVUserRole
   isActive: boolean
   isVerified: boolean
   createdAt: string
+  guestExpiresAt?: string | null
 }
 
 export interface VVAdminUsersPage {
