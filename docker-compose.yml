@@ -89,6 +89,8 @@ services:
       # Velox eSIM API (separate stack). Use host.docker.internal when Velox runs on the host.
       VELOX_API_URL:    ${VELOX_API_URL:-http://host.docker.internal:5000}
       VELOX_API_KEY:    ${VELOX_API_KEY:-}
+      # VeloxVerse admin proxy — runs on the host, so use host.docker.internal
+      VELOXVERSE_API_URL: ${VELOXVERSE_API_URL:-http://host.docker.internal:5005/api/v1}
       # Document storage — leave S3_BUCKET empty for local-disk fallback.
       S3_BUCKET:        ${S3_BUCKET:-}
       AWS_REGION:       ${AWS_REGION:-us-east-1}

@@ -18,9 +18,11 @@ export default async function veloxverseProxy(req, res) {
     return res.status(401).json({ success: false, message: "Not authenticated" });
   }
 
-  // Build the target URL: req.url is everything after the mount point
-  // e.g. if mounted at /api/vv-admin, and the request is /api/vv-admin/admin/analytics/overview
-  // then req.url = /admin/analytics/overview
+  // Build the target URL: req.url already includes the query string
+  // (e.g. /admin/analytics/overview?period=30d), so do NOT pass req.query
+  // separately — axios would duplicate every parameter.
+  // Use req.originalUrl to get the path after the mount point, but req.url
+  // is already stripped by Express when mounted at /api/vv-admin.
   const targetUrl = `${VV_BASE}${req.url}`;
 
   try {
@@ -33,12 +35,24 @@ export default async function veloxverseProxy(req, res) {
         "X-CRM-User-Email": req.user?.email || "",
       },
       data: ["POST", "PUT", "PATCH", "DELETE"].includes(req.method) ? req.body : undefined,
-      params: req.method === "GET" ? req.query : undefined,
       // Don't let axios parse the response — we stream it as-is
       validateStatus: () => true,
       // Timeout: 30s for long analytics queries
       timeout: 30000,
     });
+
+    // VeloxVerse auth failures (401/403) must not be forwarded as 401 — the CRM
+    // frontend treats any 401 as "CRM session expired" and redirects to /login.
+    // By this point CRM authenticate already passed, so upstream auth errors are
+    // integration/config issues, not a reason to log the user out of the CRM.
+    if (response.status === 401 || response.status === 403) {
+      return res.status(502).json({
+        success: false,
+        message:
+          response.data?.message ||
+          "VeloxVerse rejected the CRM session. Ensure VeloxVerse has CRM_BRIDGE_ENABLED=true and CRM_JWT_SECRET matches this CRM's JWT_SECRET, then restart the VeloxVerse backend.",
+      });
+    }
 
     // Forward the VeloxVerse response status + body to the CRM frontend
     res.status(response.status).json(response.data);

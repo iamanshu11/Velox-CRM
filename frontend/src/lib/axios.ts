@@ -34,8 +34,11 @@ api.interceptors.response.use(
 
     const isLoginRequest = typeof url === 'string' && url.includes('/auth/login')
     const isMeRequest = typeof url === 'string' && url.includes('/auth/me')
+    const isVvAdminRequest = typeof url === 'string' && url.includes('/vv-admin')
 
-    if (error.response?.status === 401 && !isLoginRequest && !isMeRequest) {
+    // VeloxVerse proxy errors must not clear the CRM session — only real CRM
+    // auth failures (/auth/* and other CRM routes) should bounce to /login.
+    if (error.response?.status === 401 && !isLoginRequest && !isMeRequest && !isVvAdminRequest) {
       useAuthStore.getState().clearAuth()
       if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
         window.location.href = '/login'
