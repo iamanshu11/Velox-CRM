@@ -57,6 +57,13 @@ function FieldPreview({ field }: { field: FormField }) {
       )
     case 'hidden':
       return <div className="text-xs text-gray-400 italic px-1">Hidden — not visible to users</div>
+    case 'section':
+      return (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 pointer-events-none">
+          <p className="text-sm font-semibold text-gray-800">{field.label}</p>
+          {field.helpText && <p className="text-xs text-gray-500 mt-1 whitespace-pre-line">{field.helpText}</p>}
+        </div>
+      )
     default:
       return (
         <input

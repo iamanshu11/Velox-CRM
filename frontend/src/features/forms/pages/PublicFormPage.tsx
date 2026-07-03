@@ -297,6 +297,13 @@ function FieldRenderer({ field, theme }: FieldRendererProps) {
           <input type="file" name={field.id} required={field.required} className="absolute inset-0 opacity-0 cursor-pointer" />
           Click to upload a file
         </div>
+      ) : field.type === 'section' ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 space-y-1">
+          <p className="text-sm font-semibold text-gray-900">{field.label}</p>
+          {field.helpText && (
+            <p className="text-sm text-gray-600 whitespace-pre-line">{field.helpText}</p>
+          )}
+        </div>
       ) : field.type === 'email' ? (
         <EmailInput field={field} inputCls={inputCls} inputStyle={inputStyle} focusStyle={focusStyle} theme={theme} />
       ) : (
@@ -470,7 +477,6 @@ export default function PublicFormPage() {
   return (
     <div
       className="min-h-screen flex items-start justify-center py-6 sm:py-12 px-4"
-      style={{ backgroundColor: `#${theme.bg}` }}
     >
       <div className="w-full max-w-lg">
         {/* Form card */}
@@ -571,7 +577,7 @@ export default function PublicFormPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">Powered by Velox CRM</p>
+        {/* <p className="text-center text-xs text-gray-400 mt-4">Powered by Velox CRM</p> */}
       </div>
     </div>
   )

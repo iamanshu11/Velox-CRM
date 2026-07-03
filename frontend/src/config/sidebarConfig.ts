@@ -15,6 +15,8 @@ import {
   DollarSign,
   Headphones,
   Globe,
+  Star,
+  Crown,
 } from 'lucide-react'
 import type { NavItem, UserRole } from '@/types'
 
@@ -36,6 +38,8 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { label: 'VV Users',       path: '/dashboard/veloxverse/users',        icon: Users },
     { label: 'VV Support',     path: '/dashboard/veloxverse/support',      icon: Headphones },
     { label: 'VV Settings',    path: '/dashboard/veloxverse/settings',     icon: Globe },
+    { label: 'VV Points',      path: '/dashboard/veloxverse/points',       icon: Star },
+    { label: 'VV Club',        path: '/dashboard/veloxverse/club',         icon: Crown },
   ],
 
   admin: [
@@ -55,6 +59,8 @@ export const SIDEBAR_CONFIG: Record<UserRole, NavItem[]> = {
     { label: 'VV Users',       path: '/dashboard/veloxverse/users',        icon: Users },
     { label: 'VV Support',     path: '/dashboard/veloxverse/support',      icon: Headphones },
     { label: 'VV Settings',    path: '/dashboard/veloxverse/settings',     icon: Globe },
+    { label: 'VV Points',      path: '/dashboard/veloxverse/points',       icon: Star },
+    { label: 'VV Club',        path: '/dashboard/veloxverse/club',         icon: Crown },
   ],
 
   employee: [

@@ -63,6 +63,13 @@ export function canViewVeloxEsim(role: UserRole | undefined | null): boolean {
   return !!role && VELOX_ESIM_VIEW_ROLES.includes(role)
 }
 
+/** VeloxVerse platform customers (users + guests) — same roles as VV admin. */
+export const VELOXVERSE_VIEW_ROLES: readonly UserRole[] = ['super_admin', 'admin'] as const
+
+export function canViewVeloxVerse(role: UserRole | undefined | null): boolean {
+  return !!role && VELOXVERSE_VIEW_ROLES.includes(role)
+}
+
 /** Convenience helper used in a few render paths. */
 export function getRoleHome(role: UserRole | undefined | null): string {
   if (!role) return '/login'

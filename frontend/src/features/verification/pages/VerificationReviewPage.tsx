@@ -61,7 +61,7 @@ export default function VerificationReviewPage() {
   }
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="max-w-full space-y-6">
       <div>
         <h2 className="text-xl font-bold text-gray-900">Verification</h2>
         <p className="mt-0.5 text-sm text-gray-500">

@@ -39,7 +39,7 @@ export default function EmployeesPage() {
   )
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 max-w-full">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Users</h2>

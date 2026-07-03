@@ -41,14 +41,18 @@ export interface PopularPackage {
   revenueUsd: number
 }
 
+export type ActivityDirection = 'credit' | 'debit'
+export type ActivityType = 'ESIM' | 'LOUNGE' | 'BENEFIT' | 'TRANSFER' | 'REFUND'
+
 export interface RecentActivity {
   orderNo: string
-  type: 'ESIM' | 'LOUNGE' | 'BENEFIT'
+  type: ActivityType
   description: string
   amountUsd: number
+  direction?: ActivityDirection
   status: string
   createdAt: string
-  customer: { name: string; email: string }
+  customer: { name: string; email: string } | null
 }
 
 export interface OrderStats {
@@ -121,15 +125,14 @@ export type LoungeVisitStatus = 'confirmed' | 'completed' | 'cancelled' | 'no_sh
 
 export interface LoungeVisit {
   id: string
-  userId: string
+  orderId?: string
   loungeName: string
   airportCode: string
   visitDate: string
   guestCount: number
   status: LoungeVisitStatus
-  costCents: number
+  totalCost: number
   createdAt: string
-  user?: { name: string; email: string }
 }
 
 export interface AdminLoungeMembership {
@@ -155,6 +158,36 @@ export interface Paginated<T> {
   total: number
   page: number
   totalPages: number
+}
+
+export interface LoungeVisitDetail {
+  id: string
+  orderId?: string
+  loungeName: string
+  airportCode: string
+  visitDate: string
+  guestCount: number
+  status: LoungeVisitStatus
+  totalCost: number
+  createdAt: string
+  customer: { name: string; email: string } | null
+  pricePerVisitCents: number | null
+  pricePerGuestCents: number | null
+  isRefundable: boolean
+  surgeApplied: boolean
+  refundableCents: number
+  breakdown: {
+    baseCents: number
+    marginCents: number
+    surgeCents: number
+    promoDiscountCents: number
+    refundFeeCents: number
+    totalCents: number
+    currency: string
+  }
+  cancelledAt: string | null
+  cancelledBy: string | null
+  bookedAt: string | null
 }
 
 // ── Transfers ───────────────────────────────────────────────────────
@@ -330,6 +363,272 @@ export interface VVAdminSearchResult {
   type: 'TICKET' | 'ESIM' | 'LOUNGE' | 'BENEFIT'
   subject: string
   status: string
+}
+
+// ── Points System ──────────────────────────────────────────────────
+
+export type PointsTransactionType = 'EARN' | 'REDEEM' | 'EXPIRE' | 'ADMIN_CREDIT' | 'ADMIN_DEBIT' | 'REFERRAL'
+export type PointsServiceType = 'LOUNGE' | 'ESIM' | 'FLIGHT' | 'HOTEL' | 'TRANSFER' | 'INSURANCE' | 'MONEY_TRANSFER' | 'TUITION' | 'UTILITY' | 'REFERRAL'
+
+export interface PointsConfigRow {
+  id: string
+  serviceType: PointsServiceType
+  pointsPerDollar: number
+  isActive: boolean
+  description: string | null
+  version: number
+  updatedBy?: string | null
+  updatedAt: string
+}
+
+export interface PointsSettings {
+  id: string
+  pointsPerDollarRedeem: number
+  minRedeemPoints: number
+  maxRedeemPerDayCents: number
+  pointsExpiryDays: number
+  version: number
+  updatedAt: string
+}
+
+export interface PointsLedgerEntry {
+  id: string
+  amount: number
+  type: PointsTransactionType
+  serviceType: PointsServiceType | null
+  referenceId: string | null
+  description: string | null
+  balanceAfter: number
+  metadata: Record<string, unknown> | null
+  createdAt: string
+}
+
+export interface AdminPointsUser {
+  id: string
+  firstName: string | null
+  lastName: string | null
+  email: string
+  role: string
+  balance: number
+  lifetimeEarned: number
+  lifetimeRedeemed: number
+}
+
+export interface AdminPointsUsersPage {
+  users: AdminPointsUser[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
+}
+
+export interface AdminUserPoints {
+  user: { id: string; firstName: string | null; lastName: string | null; email: string }
+  balance: { balance: number; lifetimeEarned: number; lifetimeRedeemed: number }
+  history: PointsLedgerEntry[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
+}
+
+export interface PointsAuditEntry {
+  id: string
+  table: string
+  recordId: string
+  fieldName: string
+  oldValue: string | null
+  newValue: string | null
+  adminName: string
+  adminEmail: string | null
+  ipAddress: string | null
+  createdAt: string
+}
+
+export interface PointsAuditPage {
+  entries: PointsAuditEntry[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
+}
+
+export interface PointsDashboard {
+  totals: {
+    totalIssued: number
+    totalRedeemed: number
+    totalExpired: number
+    outstandingPoints: number
+    outstandingLiabilityCents: number
+    outstandingLiability: number
+  }
+  redemptions: { count: number; averageValueCents: number; averageValue: number }
+  adminAdjustments: { creditCount: number; debitCount: number; creditTotal: number; debitTotal: number }
+  topUsers: Array<{ userId: string; name: string; email: string | null; lifetimeEarned: number; balance: number }>
+  ledgerStats: { totalRows: number; oldestEntry: string | null }
+}
+
+// ── VeloxClub ──────────────────────────────────────────────────────
+
+export type ClubMembershipStatus = 'ACTIVE' | 'PAST_DUE' | 'EXPIRED' | 'CANCELLED'
+export type ClubPromoDiscountType = 'PERCENTAGE' | 'FIXED'
+
+export interface ClubBenefitQuota {
+  type: 'quota'
+  visits?: number
+  rides?: number
+  discount_pct?: number
+  family_included?: boolean
+  max_family?: number
+}
+
+export interface ClubBenefitData {
+  type: 'data_grant'
+  gb: number
+}
+
+export interface ClubBenefitBoolean {
+  type: 'boolean'
+  enabled: boolean
+}
+
+export type ClubBenefitEntry = ClubBenefitQuota | ClubBenefitData | ClubBenefitBoolean
+
+export interface ClubBenefits {
+  lounge?: ClubBenefitQuota
+  dining?: ClubBenefitQuota
+  fast_track?: ClubBenefitQuota
+  esim?: ClubBenefitData
+  pick_drop?: ClubBenefitQuota
+  meet_greet?: ClubBenefitQuota
+  gym?: ClubBenefitBoolean
+  support_level?: string
+  dedicated_manager?: boolean
+  credit_cashback_max_cents?: number
+  bank_bonus_bdt?: number
+  point_multiplier?: number
+  [key: string]: unknown
+}
+
+export interface ClubTierRow {
+  id: string
+  slug: string
+  name: string
+  annualFeeCents: number
+  sortOrder: number
+  philosophy: string | null
+  isPurchasable: boolean
+  isActive: boolean
+  color: string | null
+  icon: string | null
+  currentVersion: number | null
+  benefits: ClubBenefits | null
+  activeMembers: number
+}
+
+export interface ClubBenefitVersion {
+  id: string
+  version: number
+  isCurrent: boolean
+  benefits: ClubBenefits
+  changeNote: string | null
+  effectiveAt: string
+  changedBy: { id: string; name: string; email: string } | null
+}
+
+export interface ClubMemberRow {
+  id: string
+  userId: string
+  name: string
+  email: string
+  tier: string
+  tierSlug: string
+  status: ClubMembershipStatus
+  purchasedAt: string
+  billingCycleEnd: string
+  invoiceNumber: string | null
+  purchasePriceCents: number
+  autoRenew: boolean
+}
+
+export interface ClubMembersPage {
+  members: ClubMemberRow[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
+}
+
+export interface ClubMemberUsage {
+  benefitKey: string
+  bookingId: string
+  bookingType: string
+  consumedAt: string
+}
+
+export interface ClubMembershipDetail {
+  id: string
+  tier: string
+  tierSlug: string
+  status: ClubMembershipStatus
+  benefitVersion: number
+  benefitsSnapshot: ClubBenefits | null
+  billingCycleStart: string
+  billingCycleEnd: string
+  gracePeriodEnd: string | null
+  purchasedAt: string
+  purchasePriceCents: number
+  paymentMethod: string
+  paymentReferenceId: string
+  invoiceNumber: string | null
+  orderNo: string | null
+  autoRenew: boolean
+  loyaltyDiscountApplied: boolean
+  usage: ClubMemberUsage[]
+}
+
+export interface ClubMemberDetail {
+  user: { id: string; name: string; email: string } | null
+  memberships: ClubMembershipDetail[]
+}
+
+export interface ClubPromoRow {
+  id: string
+  code: string
+  discountType: ClubPromoDiscountType
+  discountValue: number
+  maxDiscountCents: number | null
+  applicableTiers: string[]
+  maxUses: number | null
+  currentUses: number
+  maxUsesPerUser: number
+  firstPurchaseOnly: boolean
+  isActive: boolean
+  startsAt: string | null
+  expiresAt: string | null
+  createdAt: string
+}
+
+export interface ClubAnalytics {
+  activeMembers: number
+  byTier: Array<{ slug: string; name: string; count: number; revenueCents: number }>
+  mrrCents: number
+  mrr: number
+  annualRunRateCents: number
+  totalRevenueCents: number
+  churnRate: number
+  renewalSuccessRate: number
+  avgLifetimeValueCents: number
+  benefitUtilization: Array<{ benefitKey: string; count: number }>
+  mostRedeemedBenefit: string | null
+  promoUsage: Array<{ code: string; count: number }>
+  upgrades: number
+  totalMemberships: number
+}
+
+export interface ClubChangeLogEntry {
+  id: string
+  tier: string
+  tierSlug: string
+  version: number
+  isCurrent: boolean
+  changeNote: string | null
+  effectiveAt: string
+  changedBy: { name: string; email: string } | 'System (seed)'
+  benefits: ClubBenefits
+}
+
+export interface ClubChangeLogPage {
+  changes: ClubChangeLogEntry[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
 }
 
 // ── Settings ────────────────────────────────────────────────────────

@@ -123,7 +123,7 @@ export default function VVTransfersPage() {
   ]
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="max-w-full space-y-6">
       <div className="space-y-4">
         <Link
           to="/dashboard"

@@ -4,6 +4,35 @@ import { AUTH_COOKIE_NAME } from "../controllers/authController.js";
 const VV_BASE = process.env.VELOXVERSE_API_URL || "http://localhost:5005/api/v1";
 
 /**
+ * VeloxVerse audit columns (e.g. points_config.updated_by) require a VeloxVerse
+ * user UUID. Map CRM admin emails to matching VeloxVerse admin emails before
+ * forwarding X-CRM-User-Email.
+ *
+ * Priority:
+ *  1. VELOXVERSE_BRIDGE_USER_EMAIL — single override for all proxied requests
+ *  2. VELOXVERSE_BRIDGE_EMAIL_MAP — comma-separated pairs: crm@x.com:vv@y.com
+ *  3. CRM user's own email
+ */
+function bridgeUserEmail(crmEmail) {
+  const globalOverride = process.env.VELOXVERSE_BRIDGE_USER_EMAIL?.trim();
+  if (globalOverride) return globalOverride;
+
+  const normalized = (crmEmail || "").trim().toLowerCase();
+  const mapRaw = process.env.VELOXVERSE_BRIDGE_EMAIL_MAP?.trim();
+  if (mapRaw && normalized) {
+    for (const pair of mapRaw.split(",")) {
+      const sep = pair.indexOf(":");
+      if (sep === -1) continue;
+      const from = pair.slice(0, sep).trim().toLowerCase();
+      const to = pair.slice(sep + 1).trim();
+      if (from && to && from === normalized) return to;
+    }
+  }
+
+  return crmEmail || "";
+}
+
+/**
  * Forward any request from /api/vv-admin/* to the VeloxVerse backend.
  *
  * The path is forwarded as-is (minus the /api/vv-admin prefix, which is
@@ -32,7 +61,7 @@ export default async function veloxverseProxy(req, res) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
-        "X-CRM-User-Email": req.user?.email || "",
+        "X-CRM-User-Email": bridgeUserEmail(req.user?.email),
       },
       data: ["POST", "PUT", "PATCH", "DELETE"].includes(req.method) ? req.body : undefined,
       // Don't let axios parse the response — we stream it as-is

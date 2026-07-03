@@ -2,10 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { vvUsersService } from '../vvAdminService'
 import type { VVUserRole } from '../types'
 
-export function useVVUsers(page = 1, search?: string) {
+export function useVVUsers(
+  page = 1,
+  search?: string,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ['vv-users', 'list', page, search ?? ''],
     queryFn: () => vvUsersService.list(page, search),
+    enabled: options?.enabled ?? true,
   })
 }
 

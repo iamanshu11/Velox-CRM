@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Download } from 'lucide-react'
 import { useFormSubmissions, useForm } from '../hooks/useForms'
+import { SubmissionDataView } from '../utils/submissionDisplay'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5001/api'
 
@@ -99,8 +100,8 @@ export default function FormSubmissionsPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {submissions.map((sub) => (
-                <>
-                  <tr key={sub.id} className="hover:bg-gray-50">
+                <Fragment key={sub.id}>
+                  <tr className="hover:bg-gray-50">
                     <td className="px-5 py-3 text-gray-700">{sub.email ?? '—'}</td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[sub.status] ?? ''}`}>
@@ -122,15 +123,16 @@ export default function FormSubmissionsPage() {
                     </td>
                   </tr>
                   {expanded === sub.id && (
-                    <tr key={`${sub.id}-data`}>
+                    <tr>
                       <td colSpan={6} className="px-5 pb-4 bg-gray-50">
-                        <pre className="text-xs text-gray-600 bg-white border border-gray-200 rounded-xl p-4 overflow-x-auto">
-                          {JSON.stringify(sub.submission_data, null, 2)}
-                        </pre>
+                        <SubmissionDataView
+                          data={sub.submission_data}
+                          formJson={form?.form_json}
+                        />
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

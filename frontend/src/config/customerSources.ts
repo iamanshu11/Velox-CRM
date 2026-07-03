@@ -1,7 +1,7 @@
-import { ContactRound, Smartphone } from 'lucide-react'
+import { ContactRound, Globe } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { CustomerSourceId, UserRole } from '@/types'
-import { canViewVeloxEsim } from './roles'
+import { canViewVeloxVerse } from './roles'
 
 export interface CustomerSourceConfig {
   id: CustomerSourceId
@@ -40,12 +40,10 @@ export const CUSTOMER_SOURCES_CONFIG: CustomerSourceConfig[] = [
     // No crmServiceCode — 'crm' filter shows every CRM customer.
   },
   {
-    id: 'velox-esim',
-    label: 'Velox eSIM',
-    icon: Smartphone,
-    badgeClass: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-200',
-    canAccess: canViewVeloxEsim,
-    // CRM customers assigned the ESIM service appear alongside eSIM platform customers.
-    crmServiceCode: 'ESIM',
+    id: 'veloxverse',
+    label: 'VeloxVerse',
+    icon: Globe,
+    badgeClass: 'bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200',
+    canAccess: canViewVeloxVerse,
   },
 ]

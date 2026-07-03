@@ -1,7 +1,7 @@
 // ── Field types ───────────────────────────────────────────────────
 export const FIELD_TYPES = [
   'text', 'email', 'phone', 'textarea',
-  'dropdown', 'checkbox', 'radio', 'date', 'file', 'hidden',
+  'dropdown', 'checkbox', 'radio', 'date', 'file', 'hidden', 'section',
 ] as const
 export type FieldType = (typeof FIELD_TYPES)[number]
 

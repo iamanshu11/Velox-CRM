@@ -148,7 +148,7 @@ export default function VVEsimDetailPage() {
 
   if (!order) {
     return (
-      <div className="max-w-6xl space-y-6">
+      <div className="max-w-full space-y-6">
         <button
           type="button"
           onClick={() => navigate('/dashboard/veloxverse/esim-orders')}
@@ -174,7 +174,7 @@ export default function VVEsimDetailPage() {
   const title = order.coverages[0]?.packageName ?? `Order ${order.orderNo}`
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="max-w-full space-y-6">
       <div className="space-y-4">
         <button
           type="button"

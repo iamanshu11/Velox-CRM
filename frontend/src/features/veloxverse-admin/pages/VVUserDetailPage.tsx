@@ -59,7 +59,7 @@ export default function VVUserDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="max-w-full space-y-6">
       <Link
         to="/dashboard/veloxverse/users"
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900"

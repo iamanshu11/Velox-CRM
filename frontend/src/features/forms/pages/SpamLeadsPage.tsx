@@ -30,7 +30,7 @@ export default function SpamLeadsPage() {
   const total = data?.total ?? 0
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="max-w-full space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Leads</h2>

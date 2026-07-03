@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import type { VVAdminUser } from '@/features/veloxverse-admin/types'
 
 // ── Auth ─────────────────────────────────────────────────────────
 export type UserRole = 'super_admin' | 'admin' | 'employee' | 'agent' | 'affiliate'
@@ -394,7 +395,7 @@ export interface VeloxEsimIntegrationHealth {
 // ── Unified customer table (multi-source) ────────────────────────
 /** Identifies which connected service a customer row originates from.
  * Add new literal values here when integrating additional services. */
-export type CustomerSourceId = 'crm' | 'velox-esim'
+export type CustomerSourceId = 'crm' | 'velox-esim' | 'veloxverse'
 
 /**
  * Discriminated union for the unified customer table.
@@ -403,6 +404,7 @@ export type CustomerSourceId = 'crm' | 'velox-esim'
 export type UnifiedCustomerRow =
   | { _source: 'crm'; _key: string; data: Customer }
   | { _source: 'velox-esim'; _key: string; data: VeloxEsimCustomer }
+  | { _source: 'veloxverse'; _key: string; data: VVAdminUser }
 
 // ── API responses ────────────────────────────────────────────────
 export interface ApiResponse<T> {

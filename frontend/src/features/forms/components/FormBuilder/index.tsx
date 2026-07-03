@@ -63,6 +63,7 @@ function labelForType(t: FieldType): string {
     text: 'Text Input', email: 'Email Address', phone: 'Phone Number',
     textarea: 'Message', dropdown: 'Select Option', checkbox: 'Checkboxes',
     radio: 'Radio Buttons', date: 'Date', file: 'File Upload', hidden: 'Hidden Field',
+    section: 'Info Section',
   }
   return map[t] ?? t
 }

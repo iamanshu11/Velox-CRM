@@ -3,6 +3,7 @@ import { Table } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import type { UnifiedCustomerRow } from '@/types'
+import type { VVAdminUser } from '@/features/veloxverse-admin/types'
 import { CUSTOMER_SOURCES_CONFIG } from '@/config/customerSources'
 import { formatCustomerLegalName } from '../utils'
 
@@ -28,7 +29,18 @@ function getSourceConfig(id: string) {
 }
 
 function getDisplayName(row: UnifiedCustomerRow): string {
-  return row._source === 'crm' ? formatCustomerLegalName(row.data) : row.data.name
+  if (row._source === 'crm') return formatCustomerLegalName(row.data)
+  if (row._source === 'veloxverse') return row.data.fullName || row.data.email
+  return row.data.name
+}
+
+function getEmail(row: UnifiedCustomerRow): string {
+  return row.data.email
+}
+
+function getPhone(row: UnifiedCustomerRow): string {
+  if (row._source === 'veloxverse') return '—'
+  return row.data.phone ?? '—'
 }
 
 export default function CustomersTable({
@@ -69,13 +81,13 @@ export default function CustomersTable({
         {
           key: 'email',
           header: 'Email',
-          render: (row) => <span className="text-gray-700">{row.data.email}</span>,
+          render: (row) => <span className="text-gray-700">{getEmail(row)}</span>,
         },
         {
           key: 'phone',
           header: 'Phone',
           render: (row) => (
-            <span className="text-gray-600">{row.data.phone ?? '—'}</span>
+            <span className="text-gray-600">{getPhone(row)}</span>
           ),
         },
         {
@@ -85,6 +97,13 @@ export default function CustomersTable({
             if (row._source === 'crm') {
               const parts = [row.data.city, row.data.country].filter(Boolean)
               return <span className="text-gray-600">{parts.length ? parts.join(', ') : '—'}</span>
+            }
+            if (row._source === 'veloxverse') {
+              return (
+                <Badge variant={row.data.role === 'GUEST' ? 'warning' : 'info'}>
+                  {row.data.role === 'GUEST' ? 'Guest' : 'Registered'}
+                </Badge>
+              )
             }
             return <span className="text-gray-600">{row.data.country ?? '—'}</span>
           },
@@ -98,6 +117,17 @@ export default function CustomersTable({
                 <Badge variant={statusBadgeVariant(row.data.status)} dot>
                   {row.data.status}
                 </Badge>
+              )
+            }
+            if (row._source === 'veloxverse') {
+              const u = row.data as VVAdminUser
+              return (
+                <div className="flex flex-wrap gap-1">
+                  <Badge variant={u.isActive ? 'success' : 'danger'} dot>
+                    {u.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                  {!u.isVerified && <Badge variant="warning">Unverified</Badge>}
+                </div>
               )
             }
             return (
@@ -129,6 +159,14 @@ export default function CustomersTable({
                     <span className="text-[10px] text-gray-500">+{items.length - 3}</span>
                   )}
                 </div>
+              )
+            }
+            if (row._source === 'veloxverse') {
+              const u = row.data as VVAdminUser
+              return (
+                <span className="text-xs text-gray-600 whitespace-nowrap">
+                  {u.role} · {u.isVerified ? 'Verified' : 'Unverified'}
+                </span>
               )
             }
             const { totalOrders, totalSpent } = row.data

@@ -3,13 +3,17 @@ import type {
   AnalyticsOverview, RevenueSeries, GrowthSeries, PopularPackage,
   RecentActivity, OrderStats, CustomerSpending,
   AdminOrderRow, AdminOrderDetail, VVPagination,
-  LoungeVisit, AdminLoungeMembership, LoungeStats, Paginated,
+  LoungeVisit, LoungeVisitDetail, AdminLoungeMembership, LoungeStats, Paginated,
   AdminTransferBooking,
   PromoCode, PromoCodeStats, CreatePromoCodeInput,
   PricingRule, PricingAuditEntry,
   VVAdminUser, VVAdminUsersPage, VVAdminUserDetail, VVUserRole,
   VVSupportTicket, VVSupportStatistics, VVAdminTicketFilters, VVAdminSearchResult,
   VVAdminSettings, VVEsimApiTestResult,
+  PointsConfigRow, PointsSettings, AdminPointsUsersPage, AdminUserPoints,
+  PointsAuditPage, PointsDashboard,
+  ClubTierRow, ClubBenefitVersion, ClubBenefits, ClubMembersPage, ClubMemberDetail,
+  ClubPromoRow, ClubAnalytics, ClubChangeLogPage, ClubPromoDiscountType,
 } from './types'
 
 // Standard VeloxVerse API envelope
@@ -75,9 +79,11 @@ export const vvEsimService = {
 
 // ── Lounge ───────────────────────────────────────────────────────────
 export const vvLoungeService = {
-  async getVisits(params: { page?: number; limit?: number; airport?: string; status?: string } = {}) {
-    const { data } = await api.get<VVResponse<Paginated<LoungeVisit>>>(`${VV}/lounge/admin/visits`, { params })
-    return data.data
+  async getVisits(params: { page?: number; limit?: number; airport?: string; status?: string; bookingType?: string; resourceType?: string } = {}) {
+    const { data } = await api.get<VVResponse<{ visits: LoungeVisit[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>>(`${VV}/lounge/admin/visits`, { params })
+    // Map backend shape { visits, pagination } → Paginated<LoungeVisit> { items, total, page, totalPages }
+    const d = data.data
+    return { items: d.visits, total: d.pagination.total, page: d.pagination.page, totalPages: d.pagination.totalPages } as Paginated<LoungeVisit>
   },
   async getMemberships() {
     const { data } = await api.get<VVResponse<{ memberships: AdminLoungeMembership[] }>>(`${VV}/lounge/admin/memberships`)
@@ -86,6 +92,10 @@ export const vvLoungeService = {
   async getStats() {
     const { data } = await api.get<VVResponse<{ stats: LoungeStats }>>(`${VV}/lounge/admin/stats`)
     return data.data.stats
+  },
+  async getVisitDetail(visitId: string) {
+    const { data } = await api.get<VVResponse<{ visit: LoungeVisitDetail }>>(`${VV}/lounge/admin/visits/${visitId}`)
+    return data.data.visit
   },
 }
 
@@ -206,6 +216,118 @@ export const vvSupportService = {
   async search(q: string) {
     const { data } = await api.get<VVResponse<{ results: VVAdminSearchResult[] }>>(`${VV}/admin/support/search`, { params: { q } })
     return data.data.results
+  },
+}
+
+// ── Points ─────────────────────────────────────────────────────────
+export const vvPointsService = {
+  // Earning rules
+  async getConfig() {
+    const { data } = await api.get<VVResponse<{ config: PointsConfigRow[] }>>(`${VV}/admin/points/config`)
+    return data.data.config
+  },
+  async updateConfig(id: string, patch: { pointsPerDollar?: number; isActive?: boolean; description?: string }) {
+    const { data } = await api.put<VVResponse<{ config: PointsConfigRow }>>(`${VV}/admin/points/config/${id}`, patch)
+    return data.data.config
+  },
+  // Global settings
+  async getSettings() {
+    const { data } = await api.get<VVResponse<{ settings: PointsSettings }>>(`${VV}/admin/points/settings`)
+    return data.data.settings
+  },
+  async updateSettings(patch: Partial<Omit<PointsSettings, 'id' | 'version' | 'updatedAt'>>) {
+    const { data } = await api.put<VVResponse<{ settings: PointsSettings }>>(`${VV}/admin/points/settings`, patch)
+    return data.data.settings
+  },
+  // User points
+  async listUsers(page = 1, search?: string, limit = 20) {
+    const { data } = await api.get<VVResponse<AdminPointsUsersPage>>(`${VV}/admin/points/users`, {
+      params: { page, limit, ...(search ? { search } : {}) },
+    })
+    return data.data
+  },
+  async getUserPoints(userId: string, page = 1) {
+    const { data } = await api.get<VVResponse<AdminUserPoints>>(`${VV}/admin/points/users/${userId}`, { params: { page } })
+    return data.data
+  },
+  async adjustPoints(userId: string, amount: number, reason: string) {
+    const { data } = await api.post<VVResponse<{ entry: unknown }>>(`${VV}/admin/points/users/${userId}/adjust`, { amount, reason })
+    return data.data
+  },
+  async recalculate(userId: string) {
+    const { data } = await api.post<VVResponse<{ previousBalance: number; correctBalance: number; drift: number }>>(`${VV}/admin/points/users/${userId}/recalculate`)
+    return data.data
+  },
+  // Audit log
+  async getAuditLog(page = 1, limit = 20) {
+    const { data } = await api.get<VVResponse<PointsAuditPage>>(`${VV}/admin/points/audit-log`, { params: { page, limit } })
+    return data.data
+  },
+  // Dashboard
+  async getDashboard() {
+    const { data } = await api.get<VVResponse<PointsDashboard>>(`${VV}/admin/points/dashboard`)
+    return data.data
+  },
+}
+
+// ── VeloxClub ─────────────────────────────────────────────────────
+export const vvClubService = {
+  // Tiers & benefits
+  async getTiers() {
+    const { data } = await api.get<VVResponse<ClubTierRow[]>>(`${VV}/admin/club/tiers`)
+    return data.data
+  },
+  async getTierBenefits(tierId: string) {
+    const { data } = await api.get<VVResponse<ClubBenefitVersion[]>>(`${VV}/admin/club/tiers/${tierId}/benefits`)
+    return data.data
+  },
+  async updateTier(tierId: string, patch: { annualFeeCents?: number; isActive?: boolean }) {
+    const { data } = await api.put<VVResponse<{ id: string; slug: string; annualFeeCents: number; isActive: boolean }>>(`${VV}/admin/club/tiers/${tierId}`, patch)
+    return data.data
+  },
+  async updateTierBenefits(tierId: string, benefits: ClubBenefits, changeNote?: string) {
+    const { data } = await api.put<VVResponse<{ id: string; version: number; benefits: ClubBenefits; tierSlug: string }>>(`${VV}/admin/club/tiers/${tierId}/benefits`, { benefits, changeNote })
+    return data.data
+  },
+  // Members
+  async listMembers(params: { page?: number; limit?: number; tierSlug?: string; status?: string; search?: string } = {}) {
+    const { data } = await api.get<VVResponse<ClubMembersPage>>(`${VV}/admin/club/members`, { params })
+    return data.data
+  },
+  async getMember(userId: string) {
+    const { data } = await api.get<VVResponse<ClubMemberDetail>>(`${VV}/admin/club/members/${userId}`)
+    return data.data
+  },
+  async forceCancel(userId: string, reason: string) {
+    const { data } = await api.post<VVResponse<{ status: string }>>(`${VV}/admin/club/members/${userId}/cancel`, { reason })
+    return data.data
+  },
+  // Promo codes
+  async listPromos() {
+    const { data } = await api.get<VVResponse<ClubPromoRow[]>>(`${VV}/admin/club/promos`)
+    return data.data
+  },
+  async createPromo(input: {
+    code: string; discountType: ClubPromoDiscountType; discountValue: number;
+    maxDiscountCents?: number | null; applicableTiers?: string[]; maxUses?: number | null;
+    maxUsesPerUser?: number; firstPurchaseOnly?: boolean; isActive?: boolean;
+    startsAt?: string | null; expiresAt?: string | null;
+  }) {
+    const { data } = await api.post<VVResponse<{ id: string; code: string }>>(`${VV}/admin/club/promos`, input)
+    return data.data
+  },
+  async updatePromo(id: string, patch: Record<string, unknown>) {
+    const { data } = await api.put<VVResponse<{ id: string; code: string; isActive: boolean }>>(`${VV}/admin/club/promos/${id}`, patch)
+    return data.data
+  },
+  // Analytics & change log
+  async getAnalytics() {
+    const { data } = await api.get<VVResponse<ClubAnalytics>>(`${VV}/admin/club/analytics`)
+    return data.data
+  },
+  async getChangeLog(page = 1, limit = 30) {
+    const { data } = await api.get<VVResponse<ClubChangeLogPage>>(`${VV}/admin/club/change-log`, { params: { page, limit } })
+    return data.data
   },
 }
 

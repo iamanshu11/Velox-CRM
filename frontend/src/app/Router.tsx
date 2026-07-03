@@ -35,6 +35,8 @@ import VVUserDetailPage from '@/features/veloxverse-admin/pages/VVUserDetailPage
 import VVSupportListPage from '@/features/veloxverse-admin/pages/VVSupportListPage'
 import VVSupportDetailPage from '@/features/veloxverse-admin/pages/VVSupportDetailPage'
 import VVSettingsPage from '@/features/veloxverse-admin/pages/VVSettingsPage'
+import VVPointsPage from '@/features/veloxverse-admin/pages/VVPointsPage'
+import VVClubPage from '@/features/veloxverse-admin/pages/VVClubPage'
 
 const router = createBrowserRouter([
   // ── Public ──────────────────────────────────────────────────────
@@ -89,6 +91,8 @@ const router = createBrowserRouter([
               { path: '/dashboard/veloxverse/support',                element: <VVSupportListPage /> },
               { path: '/dashboard/veloxverse/support/:ticketId',      element: <VVSupportDetailPage /> },
               { path: '/dashboard/veloxverse/settings',               element: <VVSettingsPage /> },
+              { path: '/dashboard/veloxverse/points',                 element: <VVPointsPage /> },
+              { path: '/dashboard/veloxverse/club',                  element: <VVClubPage /> },
             ],
           },
 

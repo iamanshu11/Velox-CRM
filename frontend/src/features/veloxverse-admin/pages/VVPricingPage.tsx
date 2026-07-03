@@ -508,7 +508,7 @@ export default function VVPricingPage() {
   }
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="max-w-full space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <Link
