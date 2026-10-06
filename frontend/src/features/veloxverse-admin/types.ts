@@ -1335,3 +1335,6 @@ export interface ReferralCodePatch {
   maxUses?: number | null
   expiresAt?: string | null
 }
+
+// ── Audit logs ─────────────────────────────────────────────────────────
+export * from './auditTypes'

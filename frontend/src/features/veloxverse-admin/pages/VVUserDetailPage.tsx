@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ElementType, type ReactNode } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
   Armchair,
@@ -46,6 +46,8 @@ import {
   SupportTicketCard,
   TransferCard,
 } from '../components/CustomerBookingCards'
+import { CustomerActivity } from '../components/audit/CustomerActivity'
+import { EventDrawer } from '../components/audit/EventDrawer'
 
 // ── Money helpers ───────────────────────────────────────────────────
 
@@ -163,7 +165,8 @@ function Loading({ label }: { label?: string }) {
 
 // ── Page ───────────────────────────────────────────────────────────
 
-type TabKey = 'all' | 'esim' | 'lounge' | 'assist' | 'club' | 'payments' | 'support' | 'forms'
+type TabKey = 'all' | 'esim' | 'lounge' | 'assist' | 'club' | 'payments' | 'support' | 'forms' | 'activity'
+const TAB_KEYS: TabKey[] = ['all', 'esim', 'lounge', 'assist', 'club', 'payments', 'support', 'forms', 'activity']
 
 export default function VVUserDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -171,7 +174,12 @@ export default function VVUserDetailPage() {
   const setStatus = useVVSetUserStatus()
   const { showToast } = useToast()
   const [confirmBlock, setConfirmBlock] = useState(false)
-  const [tab, setTab] = useState<TabKey>('all')
+  const [searchParams] = useSearchParams()
+  // Audit-log screens link here with ?tab=activity.
+  const [tab, setTab] = useState<TabKey>(() => {
+    const t = searchParams.get('tab') as TabKey | null
+    return t && TAB_KEYS.includes(t) ? t : 'all'
+  })
   const [statusFilter, setStatusFilter] = useState('')
   const bookingsRef = useRef<HTMLDivElement | null>(null)
 
@@ -426,6 +434,7 @@ export default function VVUserDetailPage() {
                     <TabsTrigger value="payments" className="shrink-0">Payments ({billingItems.length})</TabsTrigger>
                     <TabsTrigger value="support" className="shrink-0">Support ({profile.tickets.length})</TabsTrigger>
                     <TabsTrigger value="forms" className="shrink-0">Forms ({profile.leads.length})</TabsTrigger>
+                    <TabsTrigger value="activity" className="shrink-0">Activity log</TabsTrigger>
                   </TabsList>
 
                   <div className="pt-4">
@@ -551,6 +560,12 @@ export default function VVUserDetailPage() {
                       )}
                     </TabsContent>
 
+                    {/* Everything this customer did and every error they hit, from the VeloxVerse
+                        customer-journey audit log (detail kept a few days). */}
+                    <TabsContent value="activity">
+                      <CustomerActivity kind="user" id={data.user.id} />
+                    </TabsContent>
+
                     <TabsContent value="forms">
                       {profile.leads.length === 0 ? (
                         <EmptyState icon={FileText} text="No form requests." />
@@ -565,6 +580,8 @@ export default function VVUserDetailPage() {
           </div>
         </div>
       )}
+
+      <EventDrawer />
 
       <Modal open={confirmBlock} onClose={() => setConfirmBlock(false)} title="Deactivate account?" size="sm">
         <div className="space-y-4">
