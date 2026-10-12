@@ -14,7 +14,13 @@ A full-stack CRM application built with **React + Vite** (frontend) and **Node.j
 cp .env.example .env
 ```
 
-Open `.env` and set a strong `JWT_SECRET` (generate one with `openssl rand -hex 32`).
+Open `.env` and set:
+
+- `DB_PASSWORD` — the PostgreSQL password
+- `JWT_SECRET` — at least 32 random characters (`openssl rand -hex 32`)
+- `SUPER_ADMIN_PASSWORD` — the password for the first super-admin account
+
+No secret has a default: the stack will not start until these are set. Never commit `.env`.
 
 ### 2. Start everything
 
@@ -36,8 +42,9 @@ so subsequent restarts are not slowed down by a re-seed pass.
 docker compose run --rm seed
 ```
 
-The script is idempotent: it creates the super-admin if missing, or resets
-its password to the documented default if the row already exists.
+The script creates the super-admin with the `SUPER_ADMIN_PASSWORD` from your `.env`. If the
+account already exists it is left unchanged; to reset its password on purpose run
+`SUPER_ADMIN_RESET_PASSWORD=true docker compose run --rm seed`.
 
 ### 4. Open the app
 
@@ -45,12 +52,7 @@ its password to the documented default if the row already exists.
 http://localhost:3001
 ```
 
-| Field    | Value           |
-|----------|-----------------|
-| Email    | admin@crm.com   |
-| Password | VeloxAdmin@2026! |
-
-> ⚠️  **Change the password after your first login.**
+Sign in as `admin@crm.com` with the `SUPER_ADMIN_PASSWORD` you chose.
 
 ---
 

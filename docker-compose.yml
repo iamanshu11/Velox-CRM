@@ -13,11 +13,12 @@
 #
 #  Quick start
 #  ───────────
-#  1. Copy .env.example → .env and fill in JWT_SECRET
+#  1. Copy .env.example → .env and fill in DB_PASSWORD, JWT_SECRET and
+#     SUPER_ADMIN_PASSWORD (no secret has a default in this file)
 #  2. docker compose up --build               # postgres + backend + frontend
 #  3. docker compose run --rm seed            # creates the super-admin (once)
 #  4. Open http://localhost:3001
-#     Login: admin@crm.com / VeloxAdmin@2026!  (change after first login!)
+#     Login: admin@crm.com / the SUPER_ADMIN_PASSWORD you chose
 #
 #  Optional, on demand:
 #    docker compose run --rm seed             # re-run seed (idempotent)
@@ -34,7 +35,7 @@ services:
     environment:
       POSTGRES_DB:       crm_db
       POSTGRES_USER:     postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
     volumes:
       # Persist data across restarts
       - postgres_data:/var/lib/postgresql/data
@@ -83,24 +84,39 @@ services:
       DB_PORT:          5432
       DB_NAME:          crm_db
       DB_USER:          postgres
-      DB_PASSWORD:      ${DB_PASSWORD:-postgres}
-      # JWT — override JWT_SECRET in your .env file!
-      JWT_SECRET:       ${JWT_SECRET:-change_this_to_a_long_random_secret}
+      DB_PASSWORD:      ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      # JWT — required, from .env. Production refuses to start with a short or placeholder
+      # secret (see src/config/validateEnv.js).
+      JWT_SECRET:       ${JWT_SECRET:?Set JWT_SECRET in .env (openssl rand -hex 32)}
       JWT_EXPIRES_IN:   7d
-      # The auth cookie is httpOnly. Set COOKIE_SECURE=true once you serve
-      # this stack behind HTTPS; leaving it false keeps localhost dev working.
+      # The auth cookie is httpOnly. In production the backend marks it Secure (HTTPS only) by
+      # default; this local stack is plain http://localhost, so it is switched off here. Set
+      # COOKIE_SECURE=true (or remove this line) when serving the stack behind HTTPS.
       COOKIE_SECURE:    ${COOKIE_SECURE:-false}
       # Allow requests from the frontend container
       ALLOWED_ORIGINS:  http://localhost:3001
+      # Proxy hops in front of the API (rate limits key on the client address). This stack
+      # publishes the backend port directly, so 0; set 1 behind a load balancer.
+      TRUST_PROXY:      ${TRUST_PROXY:-0}
       # Velox eSIM API (separate stack). Use host.docker.internal when Velox runs on the host.
       VELOX_API_URL:    ${VELOX_API_URL:-http://host.docker.internal:5000}
       VELOX_API_KEY:    ${VELOX_API_KEY:-}
       # VeloxVerse admin proxy — runs on the host, so use host.docker.internal
       VELOXVERSE_API_URL: ${VELOXVERSE_API_URL:-http://host.docker.internal:5005/api/v1}
-      # Document storage — leave S3_BUCKET empty for local-disk fallback.
+      # Which VeloxVerse account each CRM admin acts as (crm@x.com:vv@y.com pairs), and the
+      # optional issuer / audience on the bridge token — see backend/node-crm/.env.example.
+      VELOXVERSE_BRIDGE_EMAIL_MAP: ${VELOXVERSE_BRIDGE_EMAIL_MAP:-}
+      VELOXVERSE_BRIDGE_ISSUER:    ${VELOXVERSE_BRIDGE_ISSUER:-}
+      VELOXVERSE_BRIDGE_AUDIENCE:  ${VELOXVERSE_BRIDGE_AUDIENCE:-}
+      # Document storage — leave S3_BUCKET empty for local-disk fallback (development only:
+      # the container's disk does not survive a rebuild). Verify with:
+      #   docker compose exec backend npm run storage:check
       S3_BUCKET:        ${S3_BUCKET:-}
       AWS_REGION:       ${AWS_REGION:-us-east-1}
-      S3_PREFIX:        ${S3_PREFIX:-verification/}
+      S3_PREFIX:        ${S3_PREFIX:-}
+      S3_SIGNED_URL_TTL: ${S3_SIGNED_URL_TTL:-300}
+      S3_ENDPOINT:      ${S3_ENDPOINT:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-}
       AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       # Email (notifications) — leave SMTP_HOST empty to log instead of send.
@@ -110,13 +126,17 @@ services:
       SMTP_USER:        ${SMTP_USER:-}
       SMTP_PASS:        ${SMTP_PASS:-}
       MAIL_FROM:        ${MAIL_FROM:-Velox CRM <no-reply@velox-crm.local>}
-      # Gmail app-password for form notifications (set in .env)
-      MAIL_USER:        ${MAIL_USER:-anshuman@remitso.com}
-      MAIL_APP_PASSWORD: ${MAIL_APP_PASSWORD:-lxox ifst dcqq amss}
+      # Gmail account + app-password for form notifications (set in .env; empty = no email)
+      MAIL_USER:        ${MAIL_USER:-}
+      MAIL_APP_PASSWORD: ${MAIL_APP_PASSWORD:-}
       # Verification expiry sweep (in-process daily scheduler).
       EXPIRY_CRON_DISABLED: ${EXPIRY_CRON_DISABLED:-false}
       EXPIRY_CRON_SCHEDULE: ${EXPIRY_CRON_SCHEDULE:-0 2 * * *}
       EXPIRY_PURGE_FILES:   ${EXPIRY_PURGE_FILES:-false}
+    volumes:
+      # Local-disk document storage (used when S3_BUCKET is empty) — on a named volume so test
+      # uploads survive `docker compose up --build`. Production uses S3 instead.
+      - uploads_data:/app/uploads
     ports:
       - "5001:5001"
     depends_on:
@@ -139,7 +159,10 @@ services:
       DB_PORT:     5432
       DB_NAME:     crm_db
       DB_USER:     postgres
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      # The super-admin password comes from here — it is never stored in the repo.
+      SUPER_ADMIN_PASSWORD:       ${SUPER_ADMIN_PASSWORD:-}
+      SUPER_ADMIN_RESET_PASSWORD: ${SUPER_ADMIN_RESET_PASSWORD:-false}
     command: ["node", "database/seeds/superAdminSeed.js"]
     depends_on:
       postgres:
@@ -154,7 +177,7 @@ services:
     image: postgres:16-alpine
     container_name: velox_migrate
     environment:
-      PGPASSWORD: ${DB_PASSWORD:-postgres}
+      PGPASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
     volumes:
       - ./backend/database/migrations:/migrations:ro
     command:
@@ -184,9 +207,12 @@ services:
       DB_PORT:     5432
       DB_NAME:     crm_db
       DB_USER:     postgres
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       S3_BUCKET:   ${S3_BUCKET:-}
       AWS_REGION:  ${AWS_REGION:-us-east-1}
+      S3_PREFIX:   ${S3_PREFIX:-}
+      AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       SMTP_HOST:   ${SMTP_HOST:-}
       EXPIRY_PURGE_FILES: ${EXPIRY_PURGE_FILES:-false}
     command: ["node", "src/jobs/runExpiry.js"]
@@ -214,3 +240,5 @@ services:
 volumes:
   postgres_data:
     name: velox_postgres_data
+  uploads_data:
+    name: velox_uploads_data

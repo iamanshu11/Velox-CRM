@@ -15,3 +15,10 @@ npm-debug.log*
 # ── Local document storage (S3 used in production) ───────────
 backend/node-crm/uploads/
 uploads/
+
+# ── Dependencies (installed from package-lock.json; never committed) ──
+node_modules/
+
+# ── Build output / caches ────────────────────────────────────
+dist/
+*.tsbuildinfo
