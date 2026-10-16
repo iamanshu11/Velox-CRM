@@ -9,21 +9,28 @@ const pool = new Pool({
   database: process.env.DB_NAME     || "crm_db",
   user:     process.env.DB_USER     || "postgres",
   password: process.env.DB_PASSWORD || "",
+  // SSL is required by Lightsail managed Postgres. Do NOT remove this line.
+  // For a local Postgres without SSL, set DB_SSL=false in your local .env instead.
+  ssl: process.env.DB_SSL === "false" ? false : { rejectUnauthorized: false },
   // Keep up to 10 idle connections in the pool
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
 
+console.log(`🔐 PostgreSQL SSL: ${process.env.DB_SSL === "false" ? "OFF" : "ON"}`);
+
 // Test connection on startup
 pool.on("connect", () => {
   console.log("✅ PostgreSQL connected");
 });
 
+// An idle client died (e.g. a managed-Postgres failover). The pool has already discarded it and
+// opens a fresh connection on the next query, so log and keep serving — exiting here turned
+// every failover into a crash loop.
 pool.on("error", (err) => {
-  console.error("❌ Unexpected PostgreSQL error:", err.message);
-  process.exit(1);
-}); 
+  console.error("❌ Unexpected PostgreSQL error on an idle client:", err.message);
+});
 
 /**
  * Usage: query("SELECT * FROM users WHERE id = $1", [userId])

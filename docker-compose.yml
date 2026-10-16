@@ -81,6 +81,7 @@ services:
       NODE_ENV:         production
       # Database — uses the postgres service name as the host
       DB_HOST:          postgres
+      DB_SSL:          "false"   # the compose postgres has no SSL
       DB_PORT:          5432
       DB_NAME:          crm_db
       DB_USER:          postgres
@@ -156,6 +157,7 @@ services:
     container_name: velox_seed
     environment:
       DB_HOST:     postgres
+      DB_SSL:     "false"   # the compose postgres has no SSL
       DB_PORT:     5432
       DB_NAME:     crm_db
       DB_USER:     postgres
@@ -204,6 +206,7 @@ services:
     container_name: velox_expire
     environment:
       DB_HOST:     postgres
+      DB_SSL:     "false"   # the compose postgres has no SSL
       DB_PORT:     5432
       DB_NAME:     crm_db
       DB_USER:     postgres
