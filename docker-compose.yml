@@ -129,7 +129,7 @@ services:
       SMTP_SECURE:      ${SMTP_SECURE:-false}
       SMTP_USER:        ${SMTP_USER:-}
       SMTP_PASS:        ${SMTP_PASS:-}
-      MAIL_FROM:        ${MAIL_FROM:-Velox CRM <no-reply@velox-crm.local>}
+      MAIL_FROM:        ${MAIL_FROM:-}   # empty = send as the mail account
       # Gmail account + app-password for form notifications (set in .env; empty = no email)
       MAIL_USER:        ${MAIL_USER:-}
       MAIL_APP_PASSWORD: ${MAIL_APP_PASSWORD:-}
