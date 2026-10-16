@@ -113,6 +113,9 @@ services:
       # the container's disk does not survive a rebuild). Verify with:
       #   docker compose exec backend npm run storage:check
       S3_BUCKET:        ${S3_BUCKET:-}
+      # Without S3, production refuses new uploads unless this is true; here /app/uploads is
+      # the persistent uploads_data volume below, so local-disk storage is safe.
+      ALLOW_LOCAL_STORAGE: ${ALLOW_LOCAL_STORAGE:-true}
       AWS_REGION:       ${AWS_REGION:-us-east-1}
       S3_PREFIX:        ${S3_PREFIX:-}
       S3_SIGNED_URL_TTL: ${S3_SIGNED_URL_TTL:-300}
