@@ -1,0 +1,79 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Quick Guide topics > topic → roles (generated from canAccess) 1`] = `
+{
+  "app-users": [
+    "super_admin",
+    "admin",
+  ],
+  "approvals": [
+    "super_admin",
+    "admin",
+    "employee",
+    "agent",
+    "affiliate",
+  ],
+  "audit-logs": [
+    "super_admin",
+    "admin",
+    "support",
+  ],
+  "bookings": [
+    "super_admin",
+    "admin",
+  ],
+  "country-rules": [
+    "super_admin",
+    "admin",
+  ],
+  "customers": [
+    "super_admin",
+    "admin",
+    "employee",
+    "agent",
+    "affiliate",
+  ],
+  "forms": [
+    "super_admin",
+    "admin",
+  ],
+  "getting-around": [
+    "super_admin",
+    "admin",
+    "employee",
+    "agent",
+    "affiliate",
+    "support",
+  ],
+  "payments-refunds": [
+    "super_admin",
+    "admin",
+  ],
+  "pickdrop-inbox": [
+    "super_admin",
+    "admin",
+  ],
+  "pricing-rewards": [
+    "super_admin",
+    "admin",
+  ],
+  "promo-codes": [
+    "super_admin",
+    "admin",
+  ],
+  "staff": [
+    "super_admin",
+    "admin",
+    "employee",
+  ],
+  "support-tickets": [
+    "super_admin",
+    "admin",
+  ],
+  "verification": [
+    "employee",
+    "agent",
+    "affiliate",
+  ],
+}
+`;
