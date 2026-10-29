@@ -1,11 +1,11 @@
-import { useEffect, useId, useMemo } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import FocusTrap from 'focus-trap-react'
-import { BookOpen, ChevronDown, ArrowRight, Link2, PlayCircle, X } from 'lucide-react'
+import { BookOpen, ChevronDown, ArrowRight, Link2, PlayCircle, Search, X } from 'lucide-react'
 import { useToast } from '@/app/providers/ToastProvider'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types'
-import { guideTopicsForRole, topicShareUrl, type GuideTopic } from './guideTopics'
+import { guideTopicsForRole, matchesGuideSearch, topicShareUrl, type GuideTopic } from './guideTopics'
 
 interface Props {
   open: boolean
@@ -20,16 +20,23 @@ interface Props {
 /** Right-hand drawer (≥ md) / full-height sheet (phones) with how-to topics for the user's role. */
 export default function QuickGuide({ open, role, expanded, onExpandedChange, onClose, onReplayTour }: Props) {
   const titleId = useId()
+  const searchId = useId()
+  const [search, setSearch] = useState('')
   const topics = useMemo(() => guideTopicsForRole(role), [role])
   const sections = useMemo(() => {
     const out: { name: string; topics: GuideTopic[] }[] = []
-    for (const topic of topics) {
+    for (const topic of topics.filter((t) => matchesGuideSearch(t, search))) {
       const last = out[out.length - 1]
       if (last?.name === topic.section) last.topics.push(topic)
       else out.push({ name: topic.section, topics: [topic] })
     }
     return out
-  }, [topics])
+  }, [topics, search])
+
+  // Each opening starts with an empty search.
+  useEffect(() => {
+    if (open) setSearch('')
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -73,7 +80,27 @@ export default function QuickGuide({ open, role, expanded, onExpandedChange, onC
             </button>
           </div>
 
+          <div className="shrink-0 border-b border-guide-border px-4 py-3">
+            <label htmlFor={searchId} className="sr-only">Search the Quick Guide</label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-guide-muted" aria-hidden="true" />
+              <input
+                id={searchId}
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search the guide, e.g. refund, country, eSIM"
+                className="block min-h-11 w-full rounded-lg border border-guide-border bg-guide-surface pl-9 pr-3 text-base text-guide-text placeholder:text-guide-muted focus:border-guide-accent focus:outline-none focus:ring-2 focus:ring-guide-accent-soft sm:text-sm"
+              />
+            </div>
+          </div>
+
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            {sections.length === 0 && (
+              <p className="px-1 py-8 text-center text-sm text-guide-muted" role="status">
+                Nothing matches “{search.trim()}”. Try another word.
+              </p>
+            )}
             {sections.map((section) => (
               <section key={section.name} className="mb-5 last:mb-0" aria-label={section.name}>
                 <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-guide-muted">{section.name}</h3>

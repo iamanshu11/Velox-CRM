@@ -60,11 +60,11 @@ describe("GET /api/auth/me — tour fields", () => {
     expect(JSON.stringify(res.body)).not.toContain(HASH);
   });
 
-  it("still answers (tour not decided) before migration 022 has been run", async () => {
+  it("still answers before migration 022 has been run, and never offers the tour then", async () => {
     db({ tourError: Object.assign(new Error('column "tour_status" does not exist'), { code: "42703" }) });
     const res = await request(app).get("/api/auth/me").set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ id: 7, tour_status: null, tour_version: null, tour_seen_at: null });
+    expect(res.body.data).toMatchObject({ id: 7, tour_status: "not_offered", tour_version: null, tour_seen_at: null });
   });
 });
 

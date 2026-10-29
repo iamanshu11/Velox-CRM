@@ -3,9 +3,10 @@ import { ALL_ROLES } from '@/config/roles'
 import { canAccess } from '@/config/routeAccess'
 import type { User, UserRole } from '@/types'
 import { CURRENT_TOUR_VERSION, shouldOfferTour } from './tourConfig'
-import { GUIDE_TOPICS, guideTopicsForRole, topicShareUrl } from './guideTopics'
+import { GUIDE_TOPICS, guideTopicsForRole, matchesGuideSearch, topicShareUrl } from './guideTopics'
 import { tourStepsForRole } from './tourSteps'
-import { findVisibleTarget, isAnyDialogOpen } from './targets'
+import { findVisibleTarget, isAnyDialogOpen, navTarget } from './targets'
+import { SIDEBAR_CONFIG } from '@/config/sidebarConfig'
 
 type Me = Pick<User, 'role' | 'account_status' | 'tour_status' | 'tour_version'>
 const me = (over: Partial<Me> = {}): Me => ({ role: 'admin', account_status: 'active', tour_status: null, tour_version: null, ...over })
@@ -68,12 +69,21 @@ describe('Quick Guide topics', () => {
 
   it('links a role cannot open are removed from the topics it can see', () => {
     const verification = guideTopicsForRole('employee').find((t) => t.id === 'verification')!
-    expect(verification.links.map((l) => l.to)).toEqual(['/dashboard/verification', '/dashboard/me'])
+    expect(verification.links.map((l) => l.to)).toEqual(['/dashboard/verification'])
     for (const role of ALL_ROLES as readonly UserRole[]) {
       for (const topic of guideTopicsForRole(role)) {
         for (const link of topic.links) expect(canAccess(role, link.to), `${role} → ${link.to}`).toBe(true)
       }
     }
+  })
+
+  it('search matches titles, steps and keywords, and needs every word', () => {
+    const ids = (q: string) => GUIDE_TOPICS.filter((t) => matchesGuideSearch(t, q)).map((t) => t.id)
+    expect(ids('')).toHaveLength(GUIDE_TOPICS.length)
+    expect(ids('iccid')).toEqual(['esim'])
+    expect(ids('residency')).toContain('app-users')
+    expect(ids('mailinator')).toEqual(['forms-leads'])
+    expect(ids('esim zzz-no-match')).toEqual([])
   })
 
   it('topic ids are unique', () => {
@@ -88,13 +98,29 @@ describe('Quick Guide topics', () => {
 })
 
 describe('tour steps', () => {
+  const ids = (role: UserRole) => tourStepsForRole(role).map((s) => s.id)
+
+  it('cover every page in the role\'s sidebar, in sidebar order, between the intro and the header', () => {
+    for (const role of ALL_ROLES) {
+      const pageIds = SIDEBAR_CONFIG[role].map((item) => navTarget(item.path))
+      expect(ids(role).filter((id) => id.startsWith('nav:'))).toEqual(pageIds)
+      expect(ids(role).slice(0, 3)).toEqual(['welcome', 'menu-button', 'sidebar'])
+      expect(ids(role).slice(-2)).toEqual(['notifications', 'user-menu'])
+    }
+    expect(ids('admin').filter((id) => id.startsWith('nav:'))).toHaveLength(24)
+  })
+
+  it('every sidebar page has tour text', () => {
+    for (const role of ALL_ROLES) {
+      for (const step of tourStepsForRole(role)) expect(step.body.length, step.id).toBeGreaterThan(20)
+    }
+  })
+
   it('only include pages the role can open', () => {
-    const ids = (role: UserRole) => tourStepsForRole(role).map((s) => s.id)
-    expect(ids('support')).not.toContain('customers')
-    expect(ids('support')).toContain('audit-logs')
-    expect(ids('employee')).toEqual(expect.arrayContaining(['customers', 'employees', 'me']))
-    expect(ids('employee')).not.toContain('payments')
-    expect(ids('admin')).not.toContain('me')
+    expect(ids('support')).not.toContain(navTarget('/dashboard/customers'))
+    expect(ids('support')).toContain(navTarget('/dashboard/veloxverse/audit-logs'))
+    expect(ids('employee')).toEqual(expect.arrayContaining([navTarget('/dashboard/customers'), navTarget('/dashboard/employees'), navTarget('/dashboard/me')]))
+    expect(ids('employee')).not.toContain(navTarget('/dashboard/veloxverse/payments'))
   })
 })
 
@@ -111,11 +137,14 @@ describe('tour targets', () => {
     return el
   }
 
-  it('finds an on-screen target and skips missing, zero-size or off-canvas ones', () => {
+  it('finds a showable target and skips missing, zero-size or off-canvas ones', () => {
     const shown = place('a', { top: 10, left: 10, right: 110, bottom: 40, width: 100, height: 30 })
     place('b', {})
     place('c', { top: 10, left: -300, right: -20, bottom: 40, width: 280, height: 30 })
+    // Below the fold in a scrolling sidebar: still shown (the tour scrolls to it).
+    const below = place('d', { top: 2000, left: 10, right: 110, bottom: 2030, width: 100, height: 30 })
     expect(findVisibleTarget('a')).toBe(shown)
+    expect(findVisibleTarget('d')).toBe(below)
     expect(findVisibleTarget('b')).toBeNull()
     expect(findVisibleTarget('c')).toBeNull()
     expect(findVisibleTarget('missing')).toBeNull()

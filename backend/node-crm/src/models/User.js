@@ -31,8 +31,9 @@ const User = {
 
   /**
    * Welcome-tour state for GET /me. Kept out of findById (which every authenticated request
-   * runs) so a backend deployed before migration 022 still authenticates; until then the
-   * columns are missing (42703) and the tour simply reads as "not decided".
+   * runs) so a backend deployed before migration 022 still authenticates. Until 022 has run the
+   * columns are missing (42703) and nothing could be saved, so the tour reads as 'not_offered'
+   * rather than reappearing for everyone on every load.
    */
   getTourState: async (id) => {
     try {
@@ -47,7 +48,7 @@ const User = {
         tour_seen_at: row.tour_seen_at ?? null,
       };
     } catch (err) {
-      if (err?.code === "42703") return { tour_status: null, tour_version: null, tour_seen_at: null };
+      if (err?.code === "42703") return { tour_status: "not_offered", tour_version: null, tour_seen_at: null };
       throw err;
     }
   },

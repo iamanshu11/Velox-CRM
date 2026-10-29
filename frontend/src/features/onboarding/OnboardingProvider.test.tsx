@@ -186,7 +186,7 @@ describe('Quick Guide', () => {
     signedIn({ tour_status: 'completed', tour_version: CURRENT_TOUR_VERSION }, { role: 'employee' })
     renderAt('/dashboard/customers?guide=staff')
     await waitFor(() => expect(guide()).toBeInTheDocument())
-    expect(expandedTopics().map((b) => b.textContent)).toEqual([expect.stringContaining('Add a team member')])
+    expect(expandedTopics().map((b) => b.textContent)).toEqual([expect.stringContaining('Users: your team and their roles')])
     expect(screen.getByRole('link', { name: /Go to Users/ })).toHaveAttribute('href', '/dashboard/employees')
   })
 
@@ -200,13 +200,13 @@ describe('Quick Guide', () => {
 
   it('?guide=<id the role cannot see> opens with nothing expanded and never shows that topic', async () => {
     signedIn({}, { role: 'support' })
-    renderAt('/dashboard/veloxverse/audit-logs?guide=payments-refunds')
+    renderAt('/dashboard/veloxverse/audit-logs?guide=payments')
     await waitFor(() => expect(guide()).toBeInTheDocument())
     expect(expandedTopics()).toHaveLength(0)
-    expect(document.body.textContent).not.toMatch(/Payments, refunds and reports|payments-refunds/)
+    expect(document.body.textContent).not.toMatch(/Every payment, its details and a CSV report|guide=payments/)
     // Support only sees its own topics.
-    expect(screen.getByText('Trace what happened to a customer')).toBeInTheDocument()
-    expect(screen.queryByText('Find, add or edit a customer')).not.toBeInTheDocument()
+    expect(screen.getByText('Audit Logs: what happened to a customer')).toBeInTheDocument()
+    expect(screen.queryByText('Customers')).not.toBeInTheDocument()
   })
 
   it('removes ?guide from the URL once opened', async () => {
@@ -221,7 +221,7 @@ describe('Quick Guide', () => {
     renderAt('/dashboard/customers')
     fireEvent.click(screen.getByRole('button', { name: 'open guide' }))
     await waitFor(() => expect(guide()).toBeInTheDocument())
-    const topic = screen.getByRole('button', { name: /Find, add or edit a customer/ })
+    const topic = screen.getByRole('button', { name: /^Customers/ })
     fireEvent.click(topic)
     expect(topic).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText(/Search by name, email, phone, city/)).toBeInTheDocument()

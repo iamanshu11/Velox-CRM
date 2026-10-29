@@ -144,6 +144,7 @@ export default function Header({
           <button
             type="button"
             onClick={() => navigate('/dashboard/verification-review?status=pending')}
+            data-tour="verification-alerts"
             aria-label={
               pendingVerifCount > 0
                 ? `${pendingVerifCount} verification${pendingVerifCount === 1 ? '' : 's'} pending`
@@ -169,6 +170,7 @@ export default function Header({
           <button
             type="button"
             onClick={() => navigate('/dashboard/approvals')}
+            data-tour="approvals-button"
             aria-label={bellLabel}
             title={bellLabel}
             className="relative p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"

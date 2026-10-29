@@ -60,7 +60,7 @@ export default function WelcomeTour({ steps, onComplete, onDismiss }: Props) {
       setRect(null)
       return
     }
-    el.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    el.scrollIntoView?.({ block: 'center', inline: 'nearest' })
     let frame = 0
     const update = () => {
       cancelAnimationFrame(frame)
@@ -147,7 +147,8 @@ export default function WelcomeTour({ steps, onComplete, onDismiss }: Props) {
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-white/35 to-white/10 ring-1 ring-white/40">
               <StepIcon className="h-5 w-5" aria-hidden="true" />
             </span>
-            <p className="flex-1 text-xs font-medium text-white/90">
+            <p className="min-w-0 flex-1 text-xs font-medium text-white/90">
+              {step.section && <span className="block truncate text-[11px] uppercase tracking-wider text-white/75">{step.section}</span>}
               Step {index + 1} of {steps.length}
             </p>
             <button
